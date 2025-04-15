@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 16:47:10 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/11 18:00:26 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/04/15 16:07:00 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,16 +36,16 @@ class Location
 		Location(Location const &copy);
 
 		//Setters
-		void setPath(std::string const path);
-		void setRoot(std::string const root);
-		void setIndex(std::string const index);
+		void setPath(std::string const &path);
+		void setRoot(std::string const &root);
+		void setIndex(std::string const &index);
 		void setAutoIndex(std::string const &state);
-		void setMethods(std::vector<std::string> const methods);
-		void setReturnPath(std::string const returnPath);
-		void setAlias(std::string const alias);
-		void setCgiPath(std::vector<std::string> const cgiPath);
-		void setCgiExt(std::vector<std::string>  const cgiExt);
-		void setCgiPairs(std::string const extension, std::string const path);
+		void setMethods(std::vector<std::string> const &methods);
+		void setReturnPath(std::string const &returnPath);
+		void setAlias(std::string const &alias);
+		void setCgiPath(std::vector<std::string> const &cgiPath);
+		void setCgiExt(std::vector<std::string>  const &cgiExt);
+		void setCgiPairs(std::string const &extension, std::string const &path);
 		void setClientBodySize(unsigned long const &bodySize);
 		void setClientBodySize(std::string const &bodySize);
 		
@@ -60,6 +60,7 @@ class Location
 		const std::vector<std::string> &getCgiPath() const;
 		const std::vector<std::string> &getCgiExtension() const;
 		const std::map<std::string, std::string> &getCgiPairs() const;
+		const std::string &getCgiKey(std::string const &key) const;
 		
 		
 };
