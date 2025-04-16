@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 17:15:59 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/15 16:09:40 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/04/16 16:16:29 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,7 @@ const std::string &Location::getAlias() const
 const std::vector<std::string> &Location::getCgiPath() const
 {
 	return this->_cgi_path;
-}
+}	
 
 const std::vector<std::string> &Location::getCgiExtension() const
 {
