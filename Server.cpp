@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/16 17:14:45 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/04/18 15:03:08 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,3 +167,30 @@ void Server::tryLocation(Location &location)
 		}
 	}
 }
+
+
+bool Server::validHost(std::string hostname) const
+{
+	struct sockaddr_in sockaddr;
+	if (inet_pton(AF_INET, hostname.c_str(), &(sockaddr.sin_addr)))
+		return true;
+	return false;
+}
+
+void Server::validEOL(std::string const token)
+{
+	size_t pos = token.find(';');
+	if (pos == std::string::npos)
+		throw std::runtime_error("Token "+token+" must end with ;");
+	for (size_t i = 0; i < token.size(); i++)
+	{
+		if (!std::isspace(token[i]))
+			throw std::runtime_error("Wrong token: " + token);
+	}
+}
+
+// void Server::setWebErrors()
+// {
+// 	char *cwd = getcwd(NULL, 0);
+// 	std
+// }

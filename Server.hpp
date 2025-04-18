@@ -29,4 +29,14 @@ class Server
 		static int getPathType(std::string const &path);
 		void tryLocation(Location &location);
 		bool validHost(std::string hostname) const;
+		void validEOL(std::string const token);
+		void setWebErrors();
+
+		class ServerError: public std::exception
+		{
+			private:
+				std::string _message;
+			public:
+				ServerError
+		}
 };
