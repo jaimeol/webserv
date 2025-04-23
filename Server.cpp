@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/23 19:19:23 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/04/24 00:54:38 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,7 +72,6 @@ static int checkFile(std::string const path, int mode)
 	return access(path.c_str(), mode);
 }
 
-
 int Server::getPathType(std::string const &path)
 {
 	struct stat buffer;
@@ -91,90 +90,114 @@ int Server::getPathType(std::string const &path)
 	return -1;
 }
 
-static bool fileExistAndReadable(std::string const &path, std::string const &index)
+bool Server::fileExistAndReadable(const std::string &path, const std::string &index)
 {
-	if (Server::getPathType(index) == 1 && checkFile(path, 4) == 0)
-		return true;
-	else if (Server::getPathType(path + index) == 1	&& checkFile(path + index, 4) == 0)
-		return true;
-	return false;
+    // Comprobar si el índice es un archivo legible
+    if (getPathType(index) == FILE_TYPE && checkFile(path, READ_PERMISSION) == 0)
+        return true;
+    
+    // Comprobar si la combinación de ruta e índice es un archivo legible
+    if (getPathType(path + index) == FILE_TYPE && checkFile(path + index, READ_PERMISSION) == 0)
+        return true;
+        
+    return false;
 }
+
+std::string Server::getCurrentWorkingDir()
+{
+    char *cwd = getcwd(NULL, 0);
+    if (!cwd)
+        throw std::runtime_error("Failed to get current working directory");
+    
+    std::string result(cwd);
+    free(cwd);
+    return result;
+}
+
+void Server::tryCgiLocation(Location &location)
+{
+    if (location.getCgiExtension().empty() || location.getCgiPath().empty())
+        throw std::runtime_error("Wrong cgi configuration");
+    
+    if (access(location.getIndex().c_str(), 4) < 0)
+    {
+        std::string auxIndex = location.getRoot() + "/" + location.getIndex();
+        if (getPathType(location.getIndex()) != -1)
+        {
+            std::string rootPath = getCurrentWorkingDir();
+            location.setRoot(rootPath);
+            auxIndex = rootPath + location.getPath() + "/" + location.getIndex();
+        }
+        
+        if (auxIndex.empty() || getPathType(auxIndex) == -1 || access(auxIndex.c_str(), 4) < 0)
+            throw std::runtime_error("Wrong cgi configuration");
+            
+        validateCgiPathsAndExtensions(location);
+    }
+}
+
+void Server::validateCgiPathsAndExtensions(Location &location)
+{
+    std::vector<std::string>::const_iterator it;
+    // Verificar que las rutas CGI existen
+    for (it = location.getCgiPath().begin(); it != location.getCgiPath().end(); it++)
+    {
+        if (getPathType(*it) > 0)
+            throw std::runtime_error("Wrong cgi configuration");
+    }
+    
+    // Mapear extensiones con sus intérpretes
+    std::vector<std::string>::const_iterator itPath;
+    for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); it++)
+    {
+        if (*it != ".py" && *it != ".sh")
+            throw std::runtime_error("Wrong cgi extension");
+            
+        for (itPath = location.getCgiPath().begin(); itPath != location.getCgiPath().end(); itPath++)
+        {
+            if (*it == ".py" && (*itPath).find("python") != std::string::npos)
+                location.setCgiPairs(*it, *itPath);
+            else if (*it == ".sh" && (*itPath).find("bash") != std::string::npos)
+                location.setCgiPairs(*it, *itPath);
+        }
+    }
+    
+    if (location.getCgiPath().size() != location.getCgiExtension().size())
+        throw std::runtime_error("Wrong cgi configuration");
+}
+
+void Server::tryStandardLocation(Location &location)
+{
+    if (location.getPath()[0] != '/')
+        throw std::runtime_error("Error validating location path");
+        
+    if (location.getRoot().empty())
+        location.setRoot(this->_root);
+        
+    if (fileExistAndReadable(location.getRoot() + location.getPath() + "/", location.getIndex()))
+        return;
+        
+    if (!location.getReturnPath().empty() && 
+        !fileExistAndReadable(location.getRoot(), location.getReturnPath()))
+        throw std::runtime_error("Error validating return location");
+        
+    if (!location.getAlias().empty() && 
+        !fileExistAndReadable(location.getRoot(), location.getAlias()))
+        throw std::runtime_error("Error validating alias");
+}
+
 void Server::tryLocation(Location &location)
 {
-	if (location.getPath() == "/cgi-bin")
-	{
-		if (location.getCgiExtension().empty() || location.getCgiPath().empty())
-			throw std::runtime_error("Wrong cgi configuration");
-		if (access(location.getIndex().c_str(), 4) < 0)
-		{
-			std::string auxIndex = location.getRoot() + "/" + location.getIndex();
-			if (getPathType(location.getIndex()) != -1)
-			{
-				char *cwd = getcwd(NULL, 0);
-				std::string rootPath(cwd);
-				free(cwd);
-				location.setRoot(rootPath);
-				auxIndex = rootPath + location.getPath() + "/" + location.getIndex();
-			}
-			if (auxIndex.empty() || getPathType(auxIndex) == -1 || access(auxIndex.c_str(), 4) < 0)
-				throw std::runtime_error ("Wrong cgi configuration");
-			std::vector<std::string>::const_iterator it;
-			for (it = location.getCgiPath().begin(); it != location.getCgiPath().end(); it++)
-			{
-				if (getPathType(*it) > 0)
-					throw std::runtime_error("Wrong cgi configuration");
-			}
-			std::vector<std::string>::const_iterator itPath;
-			for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); it++)
-			{
-				if (*it != ".py" && *it != ".sh")
-					throw std::runtime_error("Wrong cgi extension");
-				for (itPath = location.getCgiPath().begin(); itPath != location.getCgiPath().end(); itPath++)
-				{
-					if (*it == ".py")
-					{
-						if ((*itPath).find("python") != std::string::npos)
-							location.setCgiPairs(*it, *itPath);
-					}
-					else if (*it == ".sh")
-					{
-						if ((*itPath).find("bash") != std::string::npos)
-							location.setCgiPairs(*it, *itPath);
-					}
-				}
-			}
-			if (location.getCgiPath().size() != location.getCgiExtension().size())
-				throw std::runtime_error("Wrong cgi configuration");
-		}
-	}
-	else
-	{
-		if (location.getPath()[0] != '/')
-			throw std::runtime_error("Error validating location path");
-		if (location.getRoot().empty())
-			location.setRoot(this->_root);
-		if (fileExistAndReadable(location.getRoot() + location.getPath() + "/", location.getIndex()))
-			return ;
-		if (!location.getReturnPath().empty())
-		{
-			if (fileExistAndReadable(location.getRoot(), location.getReturnPath()))
-				throw std::runtime_error("Error validating return location");
-		}
-		if (!location.getAlias().empty())
-		{
-			if (fileExistAndReadable(location.getRoot(), location.getAlias()))
-				throw std::runtime_error("Error validating alias");
-		}
-	}
+    if (location.getPath() == "/cgi-bin")
+        tryCgiLocation(location);
+    else
+        tryStandardLocation(location);
 }
 
-
-bool Server::validHost(std::string hostname) const
+bool Server::validHost(const std::string& hostname) const
 {
-	struct sockaddr_in sockaddr;
-	if (inet_pton(AF_INET, hostname.c_str(), &(sockaddr.sin_addr)))
-		return true;
-	return false;
+    struct sockaddr_in sockaddr;
+    return inet_pton(AF_INET, hostname.c_str(), &(sockaddr.sin_addr)) != 0;
 }
 
 void Server::validEOL(std::string const token)
@@ -191,29 +214,26 @@ void Server::validEOL(std::string const token)
 
 void Server::setWebErrors()
 {
-	char *cwd = getcwd(NULL, 0);
-	std::string aux404(cwd);
-	free (cwd);
+    std::string aux404 = getCurrentWorkingDir();
 
-	if (this->_web_errors[403].empty())
-	{
-		if (access((aux404 + "/weberrors/403.html").c_str(), 4) == -1)
-			throw std::runtime_error("Could not access default error 403 page");
-		this->_web_errors[403] = (aux404 + "/weberrors/403.html").c_str();
-	}
-	if (this->_web_errors[404].empty())
-	{
-		if (access((aux404 + "/weberrors/404.html").c_str(), 4) == -1)
-			throw std::runtime_error("Could not access default error 404 page");
-		this->_web_errors[404] = (aux404 + "/weberrors/404.html").c_str();
-	}
-	if (this->_web_errors[500].empty())
-	{
-		if (access((aux404 + "/weberrors/500.html").c_str(), 4) == -1)
-			throw std::runtime_error("Could not access default error 500 page");
-		this->_web_errors[500] = (aux404 + "/weberrors/500.html").c_str();
-	}
-	
+    if (this->_web_errors[403].empty())
+    {
+        if (access((aux404 + "/weberrors/403.html").c_str(), 4) == -1)
+            throw std::runtime_error("Could not access default error 403 page");
+        this->_web_errors[403] = (aux404 + "/weberrors/403.html").c_str();
+    }
+    if (this->_web_errors[404].empty())
+    {
+        if (access((aux404 + "/weberrors/404.html").c_str(), 4) == -1)
+            throw std::runtime_error("Could not access default error 404 page");
+        this->_web_errors[404] = (aux404 + "/weberrors/404.html").c_str();
+    }
+    if (this->_web_errors[500].empty())
+    {
+        if (access((aux404 + "/weberrors/500.html").c_str(), 4) == -1)
+            throw std::runtime_error("Could not access default error 500 page");
+        this->_web_errors[500] = (aux404 + "/weberrors/500.html").c_str();
+    }
 }
 
 void Server::setServerName(std::string name)
@@ -236,62 +256,131 @@ void Server::setHost(std::string hostname)
 
 void Server::setRoot(std::string root)
 {
-	validEOL(root);
+    validEOL(root);
 
-	if (getPathType(root) == 2)
-		this->_root = root;
-	else
-	{
-		char *cwd = getcwd(NULL, 0);
-		std::string dir(cwd);
-		free (cwd);
-		std::string finalroot = dir + root;
-		if (getPathType(root) != 2)
-			throw std::runtime_error("Invalid root: " + root);
-		this->_root = finalroot;
-	}
+    if (getPathType(root) == DIR_TYPE)
+        this->_root = root;
+    else
+    {
+        char *cwd = getcwd(NULL, 0);
+        if (!cwd)
+            throw std::runtime_error("Failed to get current working directory");
+            
+        std::string dir(cwd);
+        free(cwd);
+        
+        std::string finalroot = dir + root;
+        if (getPathType(finalroot) != DIR_TYPE)
+            throw std::runtime_error("Invalid root: " + root);
+            
+        this->_root = finalroot;
+    }
 }
 
 void Server::setFd(int fd)
 {
-	this->listen_fd = fd;
+    this->listen_fd = fd;
 }
 
 void Server::setPort(std::string port)
 {
-	validEOL(port);
-	for (size_t i = 0; i < port.length(); i++)
-	{
-		if (!isdigit(port[i]))
-			throw std::runtime_error("Wrong char in port config: " + port[i]);
-	}
-	int finalPort = atoi(port.c_str());
-	if (finalPort < 1 || finalPort > 65535)
-		throw std::runtime_error("Port value out of bounds");
-	this->_port = (uint16_t) finalPort;
+    validEOL(port);
+    
+    try {
+        int finalPort = std::stoi(port);
+        if (finalPort < 1 || finalPort > 65535)
+            throw std::runtime_error("Port value out of bounds");
+        this->_port = static_cast<uint16_t>(finalPort);
+    } catch (const std::invalid_argument&) {
+        throw std::runtime_error("Invalid port number format");
+    } catch (const std::out_of_range&) {
+        throw std::runtime_error("Port number out of range");
+    }
 }
 
 void Server::setClientMaxBodySize(std::string bodySize)
 {
-	validEOL(bodySize);
-
-	for (size_t i = 0; i < bodySize.length(); i++)
-	{
-		if (!isdigit(bodySize[i]))
-			throw std::runtime_error("Wrong char in max body size config: " + bodySize[i]);
-	}
-	long finalSize = atol(bodySize.c_str());
-	if (finalSize < 1)
-		throw std::runtime_error("Max body size value out of bounds");
-	this->client_max_body_size = finalSize;
+    validEOL(bodySize);
+    
+    try {
+        long finalSize = std::stol(bodySize);
+        if (finalSize < 1)
+            throw std::runtime_error("Max body size value out of bounds");
+        this->client_max_body_size = finalSize;
+    } catch (const std::invalid_argument&) {
+        throw std::runtime_error("Invalid body size format");
+    } catch (const std::out_of_range&) {
+        throw std::runtime_error("Body size out of range");
+    }
 }
 
-
-std::string Server::getWebError(int code)  const
+void Server::setErrorPages(std::vector<std::string> web_errors)
 {
-	std::map<unsigned int, std::string>::const_iterator it = this->_web_errors.find(code);
-	if (it != this->_web_errors.end())
-		return it->second;
-	return "";
+    if (web_errors.empty())
+        return;
+        
+    for (size_t i = 0; i < web_errors.size(); i++)
+    {
+        // Validar código de error (debe ser un número de 3 dígitos)
+        const std::string& errorCode = web_errors[i];
+        if (errorCode.length() != 3)
+            throw std::runtime_error("Invalid page error code: length must be 3 digits");
+        
+        for (size_t j = 0; j < errorCode.length(); j++)
+        {
+            if (!isdigit(errorCode[j]))
+                throw std::runtime_error("Invalid page error code: contains non-digit character");
+        }
+        
+        int codeError = atoi(errorCode.c_str());
+        
+        // Validar que hay un path después del código
+        i++;
+        if (i >= web_errors.size())
+            throw std::runtime_error("Missing error page path after error code");
+        
+        // Validar y preparar el path
+        std::string path = web_errors[i];
+        validEOL(path);
+        
+        // Verificar que no sea un directorio
+        if (getPathType(path) == DIR_TYPE)
+            throw std::runtime_error("Invalid page error path (is a directory): " + path);
+        
+        // Asegurar que hay un root path válido
+        if ((this->_root).empty())
+        {
+            char *cwd = getcwd(NULL, 0);
+            if (!cwd)
+                throw std::runtime_error("Failed to get current working directory");
+            
+            std::string auxRoot(cwd);
+            free(cwd);
+            this->setRoot((auxRoot + ";").c_str());
+        }
+        
+        // Validar que el archivo existe y es accesible
+        std::string fullPath = this->_root + path;
+        if (getPathType(fullPath) != FILE_TYPE)
+            throw std::runtime_error("Invalid page error path (file not found): " + path);
+        
+        if (access(fullPath.c_str(), R_OK) == -1)
+            throw std::runtime_error("Cannot read file: " + path + " (Permission denied)");
+        
+        // Guardar la configuración
+        std::map<unsigned int, std::string>::iterator it = this->_web_errors.find(codeError);
+        if (it != _web_errors.end())
+            it->second = fullPath;
+        else
+            this->_web_errors.insert(std::make_pair(codeError, fullPath));
+    }
+}
+
+std::string Server::getWebError(int code) const
+{
+    std::map<unsigned int, std::string>::const_iterator it = this->_web_errors.find(code);
+    if (it != this->_web_errors.end())
+        return it->second;
+    return "";
 }
 
