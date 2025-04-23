@@ -31,12 +31,21 @@ class Server
 		bool validHost(std::string hostname) const;
 		void validEOL(std::string const token);
 		void setWebErrors();
+		void setServerName(std::string name);
+		void setHost(std::string hostname);
+		void setRoot(std::string root);
+		void setFd(int fd);
+		void setPort(std::string port);
+		void setClientMaxBodySize(std::string bodySize);
+		void setErrorPages(std::vector<std::string> web_errors);
 
-		class ServerError: public std::exception
-		{
-			private:
-				std::string _message;
-			public:
-				ServerError
-		}
+
+		std::string getWebError(int code) const;
+		// class ServerError: public std::exception
+		// {
+		// 	private:
+		// 		std::string _message;
+		// 	public:
+		// 		ServerError
+		// }
 };

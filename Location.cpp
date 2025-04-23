@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 17:15:59 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/16 16:16:29 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/04/23 16:23:00 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -190,6 +190,3 @@ const std::string &Location::getCgiKey(std::string const &key) const
 		throw std::runtime_error("No cgi key found for :" + key);
 	return it->second;
 }
-
-
-

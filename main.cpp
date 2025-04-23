@@ -1,0 +1,15 @@
+#include "Server.hpp"
+
+int main(void)
+{
+	Server s;
+	try
+	{
+		s.setWebErrors();
+		std::cout << "404 route: " << s.getWebError(404) << std::endl;
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+	}
+}

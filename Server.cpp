@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/18 15:03:08 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/04/23 19:19:23 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -189,8 +189,109 @@ void Server::validEOL(std::string const token)
 	}
 }
 
-// void Server::setWebErrors()
-// {
-// 	char *cwd = getcwd(NULL, 0);
-// 	std
-// }
+void Server::setWebErrors()
+{
+	char *cwd = getcwd(NULL, 0);
+	std::string aux404(cwd);
+	free (cwd);
+
+	if (this->_web_errors[403].empty())
+	{
+		if (access((aux404 + "/weberrors/403.html").c_str(), 4) == -1)
+			throw std::runtime_error("Could not access default error 403 page");
+		this->_web_errors[403] = (aux404 + "/weberrors/403.html").c_str();
+	}
+	if (this->_web_errors[404].empty())
+	{
+		if (access((aux404 + "/weberrors/404.html").c_str(), 4) == -1)
+			throw std::runtime_error("Could not access default error 404 page");
+		this->_web_errors[404] = (aux404 + "/weberrors/404.html").c_str();
+	}
+	if (this->_web_errors[500].empty())
+	{
+		if (access((aux404 + "/weberrors/500.html").c_str(), 4) == -1)
+			throw std::runtime_error("Could not access default error 500 page");
+		this->_web_errors[500] = (aux404 + "/weberrors/500.html").c_str();
+	}
+	
+}
+
+void Server::setServerName(std::string name)
+{
+	if (!this->_name.empty())
+		return ;
+	validEOL(name);
+	this->_name = name;
+}
+
+void Server::setHost(std::string hostname)
+{
+	validEOL(hostname);
+	if (hostname == "localhost")
+		hostname = "127.0.0.1";
+	if (!validHost(hostname))
+		throw std::runtime_error("Invalid host: " + hostname);
+	this->_host = inet_addr(hostname.data());
+}
+
+void Server::setRoot(std::string root)
+{
+	validEOL(root);
+
+	if (getPathType(root) == 2)
+		this->_root = root;
+	else
+	{
+		char *cwd = getcwd(NULL, 0);
+		std::string dir(cwd);
+		free (cwd);
+		std::string finalroot = dir + root;
+		if (getPathType(root) != 2)
+			throw std::runtime_error("Invalid root: " + root);
+		this->_root = finalroot;
+	}
+}
+
+void Server::setFd(int fd)
+{
+	this->listen_fd = fd;
+}
+
+void Server::setPort(std::string port)
+{
+	validEOL(port);
+	for (size_t i = 0; i < port.length(); i++)
+	{
+		if (!isdigit(port[i]))
+			throw std::runtime_error("Wrong char in port config: " + port[i]);
+	}
+	int finalPort = atoi(port.c_str());
+	if (finalPort < 1 || finalPort > 65535)
+		throw std::runtime_error("Port value out of bounds");
+	this->_port = (uint16_t) finalPort;
+}
+
+void Server::setClientMaxBodySize(std::string bodySize)
+{
+	validEOL(bodySize);
+
+	for (size_t i = 0; i < bodySize.length(); i++)
+	{
+		if (!isdigit(bodySize[i]))
+			throw std::runtime_error("Wrong char in max body size config: " + bodySize[i]);
+	}
+	long finalSize = atol(bodySize.c_str());
+	if (finalSize < 1)
+		throw std::runtime_error("Max body size value out of bounds");
+	this->client_max_body_size = finalSize;
+}
+
+
+std::string Server::getWebError(int code)  const
+{
+	std::map<unsigned int, std::string>::const_iterator it = this->_web_errors.find(code);
+	if (it != this->_web_errors.end())
+		return it->second;
+	return "";
+}
+
