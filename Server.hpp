@@ -27,7 +27,7 @@ class Server
         unsigned long client_max_body_size;
         bool _autoindex;
         std::map<unsigned int, std::string> _web_errors;
-        std::vector<std::string> _locations;
+        std::vector<Location> _locations;
         struct sockaddr_in server_address;
         int listen_fd;
         pollfd _pollfd;
@@ -58,6 +58,15 @@ class Server
         void setPort(std::string port);
         void setClientMaxBodySize(std::string bodySize);
         void setErrorPages(std::vector<std::string> web_errors);
+		void setIndex(std::string &index);
+		void setAutoIndex(std::string &autoI);
+		bool paramsLeft(std::string str, size_t pos);
+		std::string returnParams(std::string str, size_t pos);
+		std::vector<std::string> splitSpaces(std::string &methods);
+		void parseExtensions(std::vector<std::string> &extensions, std::string &auxExt);
+		void parseCgiPath(std::vector<std::string> &paths, std::string &auxPath);
+		void setLocation(std::string name, std::vector<std::string> &src);
+		
 
         std::string getWebError(int code) const;
         // Getters adicionales
