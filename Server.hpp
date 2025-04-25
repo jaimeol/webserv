@@ -37,13 +37,16 @@ class Server
         void tryCgiLocation(Location &location);
         void tryStandardLocation(Location &location);
         std::string getCurrentWorkingDir();
-        static int checkFile(std::string const path, int mode);
+        //static int checkFile(std::string const path, int mode);
         bool fileExistAndReadable(const std::string &path, const std::string &index);
+        bool emptyWeberrors();
         
     public:
         Server();
         Server(Server const &copy);
         ~Server();
+        void startServer();
+        int createServer();
 
         void initWebErrors();
         static int getPathType(std::string const &path);
@@ -68,13 +71,18 @@ class Server
 		void setLocation(std::string name, std::vector<std::string> &src);
 		
 
-        std::string getWebError(int code) const;
-        // Getters adicionales
-        uint16_t getPort() const { return _port; }
-        in_addr_t getHost() const { return _host; }
-        const std::string& getName() const { return _name; }
-        const std::string& getRoot() const { return _root; }
-        unsigned long getClientMaxBodySize() const { return client_max_body_size; }
-        bool getAutoindex() const { return _autoindex; }
-        int getListenFd() const { return listen_fd; }
+       const std::string &getName();
+       const uint16_t &getPort();
+       const in_addr_t &getHost();
+       const std::string &getIndex();
+       const std::string &getRoot();
+       const unsigned long &getClientMaxBodySize();
+       const bool &getAutoIndex();
+       const std::map<unsigned int, std::string> &getWebErrors();
+       const std::string &getWebErrorPath(int code);
+       const std::vector<Location> &getLocations();
+       const int getListenFd();
+       const pollfd getPollFd();
+       const std::vector<Location>::iterator &getLocationKey(std::string key);
+       
 };

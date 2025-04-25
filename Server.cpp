@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/24 14:55:34 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/04/25 16:43:57 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -566,11 +566,134 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 	this->_locations.push_back(location);
 }
 
-std::string Server::getWebError(int code) const
+const std::string &Server::getName()
 {
-	std::map<unsigned int, std::string>::const_iterator it = this->_web_errors.find(code);
-	if (it != this->_web_errors.end())
-		return it->second;
-	return "";
+	return this->_name;
 }
 
+const uint16_t &Server::getPort()
+{
+	return this->_port;
+}
+
+const in_addr_t &Server::getHost()
+{
+	return this->_host;
+}
+const std::string &Server::getIndex()
+{
+	return this->_index;
+}
+
+const std::string &Server::getRoot()
+{
+	return this->_root;
+}
+
+const unsigned long &Server::getClientMaxBodySize()
+{
+	return this->client_max_body_size;
+}
+
+const bool &Server::getAutoIndex()
+{
+	return this->_autoindex;
+}
+
+const std::map<unsigned int, std::string> &Server::getWebErrors()
+{
+	return this->_web_errors;
+}
+
+const std::string &Server::getWebErrorPath(int code)
+{
+	std::map<unsigned int, std::string>::const_iterator it = this->_web_errors.find(code);
+	if (it == this->_web_errors.end())
+	{
+		std::stringstream str;
+		str << code;
+		throw std::runtime_error("Invalid web error page code: " + str.str());
+	}
+	return it->second;
+}
+
+const std::vector<Location> &Server::getLocations()
+{
+	return this->_locations;
+}
+const int Server::getListenFd()
+{
+	return this->listen_fd;
+}
+
+const pollfd Server::getPollFd()
+{
+	return this->_pollfd;
+}
+
+bool Server::emptyWeberrors()
+{
+	std::map<unsigned int, std::string>::const_iterator it;
+	for (it = this->_web_errors.begin(); it != this->_web_errors.end(); it++)
+	{
+		if (!(it->second).empty())
+			return false;
+	}
+	return true;
+}
+
+void Server::startServer()
+{
+	if ((this->listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+	{
+		std::cerr << "Server error: Socket creation error" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	int opt = 1;
+	setsockopt(this->listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
+
+	memset(&this->server_address, 0, sizeof(this->server_address));
+	this->server_address.sin_family = AF_INET;
+	this->server_address.sin_addr.s_addr = this->_host;
+	this->server_address.sin_port = htons(this->_port);
+	if (bind(this->listen_fd, (struct sockaddr *) &this->server_address, sizeof(this->server_address)) == -1)
+	{
+		std::cerr << "Server error: Socket: bind error" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+int Server::createServer()
+{
+	int server_fd = socket(PF_INET, SOCK_STREAM, 0);
+	if (server_fd == -1)
+	{
+		std::cerr << "Error in socket: " <<  strerror(errno) << std::endl;
+		close (server_fd);
+		exit (EXIT_FAILURE);
+	}
+	
+	int opt = 1;
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+	{
+		std::cerr << "Error in set socket: " << strerror(errno) << std::endl;
+		close (server_fd);
+		exit (EXIT_FAILURE);
+	}
+
+	server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = _host;
+	server_address.sin_port = htons(_port);
+	
+	if (bind(server_fd, (struct sockaddr *)&server_address, sizeof(server_address)) == -1)
+	{
+		std::cerr << "Error in socket: " << strerror(errno) << std::endl;
+		close (server_fd);
+		return -1;
+	}
+	
+	this->_pollfd.fd = server_fd;
+	this->_pollfd.events = POLLIN;
+	std::cout << "Server listening in port " << _port << "..." << std::endl;
+	return server_fd;
+}
