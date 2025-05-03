@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+         #
+#    By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:35:06 by jolivare          #+#    #+#              #
-#    Updated: 2025/04/29 12:54:24 by jolivare         ###   ########.fr        #
+#    Updated: 2025/05/03 10:02:53 by jolivare         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -31,7 +31,7 @@ fclean: clean
 
 re: fclean all
 
-run: all
+run: all clean
 	./$(NAME)
 
 .PHONY: all clean fclean re run
