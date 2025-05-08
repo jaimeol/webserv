@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/03 10:03:22 by jolivare          #+#    #+#             */
-/*   Updated: 2025/05/03 15:32:00 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/05/08 11:46:46 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -202,4 +202,74 @@ std::vector<std::string> Config::getContentVector(std::string &config)
 			i++;
 	}
 	return content;
+}
+
+std::vector<std::string> Config::split_spaces(std::string &str)
+{
+	std::vector<std::string> res;
+	std::istringstream iss(str);
+	std::string word;
+	
+	while (iss >> word)
+		res.push_back(word);
+	return res;
+}
+
+std::string Config::getNamePath(std::string &locations)
+{
+	size_t i = 0;
+	while (locations[i] != ' ')
+		i++;
+	while (locations[i] == ' ')
+		i++;
+	size_t finalPos = i;
+	while (locations[finalPos] != ' ' &&  locations[finalPos] != '\n' && locations[finalPos] != '{')
+		finalPos++;
+	return locations.substr(i, finalPos - i);
+}
+
+std::vector<std::string> Config::getArgLocations(std::string &locations)
+{
+	size_t i = locations.find(' ');
+	while (locations[i] && isspace(locations[i]))
+		i++;
+	while (locations[i] && !isspace(locations[i]) && locations[i] != '{')
+		i++;
+	while (locations[i] && isspace(locations[i]))
+		i++;
+	if (locations[i] == '{')
+		throw std::runtime_error("Wrong location config");
+	i++;
+	while (isspace(locations[i]))
+		i++;
+	std::vector<std::string> args;
+	for (size_t z = i; locations[z]; z++)
+	{
+		while (locations[z] != '\n')
+		{
+			if (locations[z] == '}')
+				break;
+			z++;
+		}
+		if (locations[z] == '}')
+			break;
+		if (z == std::string::npos)
+		{
+			args.push_back(locations.substr(i));
+			break ;
+		}
+		args.push_back(locations.substr(i, z - i));
+		i = z + 1;
+	}
+	return args;
+}
+
+void Config::vectorToServer(std::vector<std::string> &content, Server &server)
+{
+	std::vector<std::string>::iterator it;
+	for (it = content.begin(); it != content.end(); it++)
+	{
+		std::string param = *it;
+		std::string auxPort = param.substr(7);
+	}
 }
