@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/03 10:03:22 by jolivare          #+#    #+#             */
-/*   Updated: 2025/05/08 11:46:46 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/05/15 11:15:23 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -270,6 +270,132 @@ void Config::vectorToServer(std::vector<std::string> &content, Server &server)
 	for (it = content.begin(); it != content.end(); it++)
 	{
 		std::string param = *it;
-		std::string auxPort = param.substr(7);
+		if (param.substr(0, 6) == "listen" && param[6] == ' ')
+		{
+			std::string auxPort = param.substr(7);
+			removeInitialSpaces(auxPort);
+			server.setPort(auxPort);
+		}
+		else if (param.substr(0, 11) == "server_name" && param[11] == ' ')
+		{
+			std::string auxName = param.substr(12);
+			removeInitialSpaces(auxName);
+			server.setServerName(auxName);
+		}
+		else if (param.substr(0, 4) == "host" && param[4] == ' ')
+		{
+			std::string auxHost = param.substr(5);
+			removeInitialSpaces(auxHost);
+			server.setHost(auxHost);
+		}
+		else if (param.substr(0, 4) == "root" && param[4] == ' ')
+		{
+			std::string auxRoot = param.substr(5);
+			removeInitialSpaces(auxRoot);
+			server.setRoot(auxRoot);
+		}
+		else if (param.substr(0, 20) == "client_max_body_size" && param[20] == ' ')
+		{
+			std::string auxSize = param.substr(21);
+			removeInitialSpaces(auxSize);
+			server.setClientMaxBodySize(auxSize);
+		}
+		else if (param.substr(0, 5) == "index" && param[5] == ' ')
+		{
+			std::string auxIndex = param.substr(6);
+			removeInitialSpaces(auxIndex);
+			server.setIndex(auxIndex);
+		}
+		else if (param.substr(0, 9) == "autoindex" && param[9] == ' ')
+		{
+			std::string auxAutoI = param.substr(10);
+			removeInitialSpaces(auxAutoI);
+			server.setAutoIndex(auxAutoI);
+		}
+		else if (param.substr(0, 10) == "error_page" && param[10] == ' ')
+		{
+			std::string auxErrorPages = param.substr(11);
+			removeInitialSpaces(auxErrorPages);
+			std::vector<std::string> auxErrors = split_spaces(auxErrorPages); 
+			server.setErrorPages(auxErrors);
+		}
+		else if (param.substr(0, 8) == "location" && param[8] == ' ')
+		{
+			std::string auxLocation = param.substr(9);
+			std::vector<std::string> locations = getArgLocations(param);
+			server.setLocation(auxLocation, locations);
+		}
+		else
+			throw std::runtime_error("Undefined parameter: " + param);
 	}
+	if (server.getRoot().empty())
+	{
+		char *cwd = getcwd(NULL, 0);
+		std::string auxRoot(cwd);
+		free (cwd);
+		server.setRoot((auxRoot + ";").c_str());
+	}
+	if (server.getName().empty())
+		server.setServerName("localhost;");
+	if (server.getPort() == 0)
+		server.setPort("80;");
+	server.setWebErrors();
+}
+
+void Config::saveServers()
+{
+	std::vector<std::string>::iterator it;
+	std::vector<short> allPorts;
+	for (it = this->server_configs.begin(); it != this->server_configs.end(); it++)
+	{
+		std::string servConf = *it;
+		removeFirstAndLastLine(servConf);
+		removeInitialSpaces(servConf);
+		std::vector<std::string> content = getContentVector(servConf);
+		
+		Server newServ;
+		vectorToServer(content, newServ);
+		bool found_root = false;
+		std::vector<Location>::const_iterator it;
+		allPorts.push_back(newServ.getPort());
+		for (it = newServ.getLocations().begin(); it != newServ.getLocations().end(); it++)
+		{
+			if (it->getPath() == "/")
+				found_root = true;
+		}
+		if (found_root == false)
+			throw std::runtime_error("Could not find location");
+	}
+	std::vector<short>::const_iterator it2;
+	for (it2 = allPorts.begin(); it2 != allPorts.end(); it2++)
+	{
+		std::vector<short>::const_iterator it3;
+		for (it3 = it2 + 1; it2 != allPorts.end(); it2++)
+		{
+			if (*it3 == *it2)
+				throw std::runtime_error("There can not be the same two ports in config file");
+		}
+	}
+}
+
+void Config::printAllConfigs()
+{
+	for(std::vector<std::string>::iterator it = this->server_configs.begin(); it != server_configs.end(); ++it)
+	{
+		removeFirstAndLastLine(*it);
+		removeInitialSpaces(*it);
+		std::cout << *it << std::endl;
+	}
+}
+
+Server *Config::getServer(int i)
+{
+	if (i < this->server_num)
+		return &(this->servers[i]);
+	return NULL;
+}
+
+int Config::getServerNum()
+{
+	return this->server_num;
 }
