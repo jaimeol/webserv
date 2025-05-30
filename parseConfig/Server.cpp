@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
+/*   By: rpisoner <rpisoner@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/29 12:53:47 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/05/30 13:27:31 by rpisoner         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -499,6 +499,10 @@ void Server::parseCgiPath(std::vector<std::string> &paths, std::string &auxPath)
 	}
 }
 
+void Server::addLocation(const Location& location) {
+    this->_locations.push_back(location);
+}
+
 void Server::setLocation(std::string name, std::vector<std::string> &src)
 {
 	Location location;
@@ -654,10 +658,10 @@ const std::string &Server::getWebErrorPath(int code)
 	return it->second;
 }
 
-const std::vector<Location> &Server::getLocations()
-{
-	return this->_locations;
+const std::vector<Location> &Server::getLocations() const {
+    return this->_locations;
 }
+
 int Server::getListenFd() const
 {
 	return this->listen_fd;

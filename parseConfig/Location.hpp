@@ -3,15 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Location.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
+/*   By: rpisoner <rpisoner@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 16:47:10 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/29 12:46:11 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/05/29 18:13:34 by rpisoner         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/WebServ.hpp"
 
+#ifndef LOCATION_HPP
+# define LOCATION_HPP
 #define MAX_REQUEST_LENGTH 1048576
 
 class Location
@@ -64,3 +66,4 @@ class Location
 		
 		
 };
+#endif

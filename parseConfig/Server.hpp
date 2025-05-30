@@ -53,6 +53,7 @@ class Server
         void tryLocation(Location &location);
         bool validHost(const std::string& hostname) const;
         void validEOL(std::string const token);
+		void addLocation(const Location& location);
         void setWebErrors();
         void setServerName(std::string name);
         void setHost(std::string hostname);
@@ -80,7 +81,7 @@ class Server
        const bool &getAutoIndex();
        const std::map<unsigned int, std::string> &getWebErrors();
        const std::string &getWebErrorPath(int code);
-       const std::vector<Location> &getLocations();
+	   const std::vector<Location> &getLocations() const;
        int getListenFd() const;
        const pollfd getPollFd();
        const std::vector<Location>::iterator &getLocationKey(std::string key);

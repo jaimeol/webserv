@@ -3,16 +3,17 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+         #
+#    By: rpisoner <rpisoner@student.42madrid.com>   +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:35:06 by jolivare          #+#    #+#              #
-#    Updated: 2025/05/03 10:02:53 by jolivare         ###   ########.fr        #
+#    Updated: 2025/05/29 18:14:09 by rpisoner         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = webserv
 
-SRC = parseConfig/Server.cpp parseConfig/Location.cpp main.cpp
+SRC = parseConfig/Server.cpp parseConfig/Location.cpp main.cpp parseConfig/HttpRequest.cpp \
+      parseConfig/HttpResponse.cpp parseConfig/HttpHandler.cpp
 OBJECTS = $(SRC:.cpp=.o)
 CC = c++
 RM = rm -f

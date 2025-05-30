@@ -1,4 +1,7 @@
 #include "parseConfig/Server.hpp"
+#include "./inc/HttpRequest.hpp"
+#include "./inc/HttpResponse.hpp"
+#include "./inc/HttpResponse.hpp"
 #include <signal.h>
 #include <poll.h>
 #include <fcntl.h>
@@ -7,6 +10,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include "./parseConfig/HttpHandler.hpp"
 
 volatile sig_atomic_t g_running = 1;
 
@@ -19,16 +23,15 @@ int main(void) {
     try {
         signal(SIGINT, signalHandler);
         
-        Server server;
-        
-        // Configurar el servidor
-        server.setPort("8080;");
-        server.setHost("127.0.0.1;");
-        server.setRoot("./www;");
-        server.setWebErrors();
+		std::vector<Server> servers;
+		Server server;
+		server.setPort("8080;");
+		servers.push_back(server);
+		Server& ref_server = servers[0];
+
         
         // Crear el servidor y verificar que se creó correctamente
-        int server_fd = server.createServer();
+        int server_fd = ref_server.createServer();
         if (server_fd < 0) {
             std::cerr << "Error: No se pudo crear el servidor" << std::endl;
             return 1;
@@ -41,15 +44,15 @@ int main(void) {
             return 1;
         }
         
-        std::cout << "Servidor corriendo en http://localhost:" << server.getPort() << "/" << std::endl;
+        std::cout << "Servidor corriendo en http://localhost:" << ref_server.getPort() << "/" << std::endl;
         std::cout << "Para probar errores, visita:" << std::endl;
-        std::cout << "  - http://localhost:" << server.getPort() << "/403 (Forbidden)" << std::endl;
-        std::cout << "  - http://localhost:" << server.getPort() << "/404 (Not Found)" << std::endl;
-        std::cout << "  - http://localhost:" << server.getPort() << "/500 (Server Error)" << std::endl;
+        std::cout << "  - http://localhost:" << ref_server.getPort() << "/403 (Forbidden)" << std::endl;
+        std::cout << "  - http://localhost:" << ref_server.getPort() << "/404 (Not Found)" << std::endl;
+        std::cout << "  - http://localhost:" << ref_server.getPort() << "/500 (Server Error)" << std::endl;
         
         // Vector para manejar múltiples conexiones con poll
         std::vector<pollfd> poll_fds;
-        poll_fds.push_back(server.getPollFd());
+        poll_fds.push_back(ref_server.getPollFd());
         
         // Loop principal
         while (g_running) {
@@ -64,138 +67,102 @@ int main(void) {
             
             // Procesar eventos
             for (size_t i = 0; i < poll_fds.size(); i++) {
-                if (!(poll_fds[i].revents & POLLIN))
-                    continue;
-                
-                if (poll_fds[i].fd == server_fd) {
-                    // Aceptar nueva conexión
-                    struct sockaddr_in clientAddr;
-                    socklen_t clientAddrLen = sizeof(clientAddr);
-                    int clientFd = accept(server_fd, (struct sockaddr*)&clientAddr, &clientAddrLen);
-                    
-                    if (clientFd < 0) {
-                        std::cerr << "Error aceptando conexión" << std::endl;
-                        continue;
-                    }
-                    
-                    // Configurar socket como no bloqueante
-                    int flags = fcntl(clientFd, F_GETFL, 0);
-                    fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
-                    
-                    // Añadir a poll
-                    pollfd client_pfd;
-                    client_pfd.fd = clientFd;
-                    client_pfd.events = POLLIN;
-                    poll_fds.push_back(client_pfd);
-                    
-                    std::cout << "Nueva conexión aceptada desde " 
-                              << inet_ntoa(clientAddr.sin_addr) << ":" 
-                              << ntohs(clientAddr.sin_port) << std::endl;
-                } else {
-                    // Leer datos del cliente
-                    char buffer[4096] = {0};
-                    int bytesRead = recv(poll_fds[i].fd, buffer, sizeof(buffer) - 1, 0);
-                    
-                    if (bytesRead <= 0) {
-                        // Cliente desconectado o error
-                        close(poll_fds[i].fd);
-                        poll_fds.erase(poll_fds.begin() + i);
-                        i--; // Ajustar índice
-                        continue;
-                    }
-                    
-                    // Añadir terminador nulo para tratarlo como string
-                    buffer[bytesRead] = '\0';
-                    std::string request(buffer);
-                    
-                    // Extraer la URI de la solicitud HTTP
-                    std::string requestUri;
-                    size_t uriStart = request.find("GET ") + 4;
-                    if (uriStart != std::string::npos) {
-                        size_t uriEnd = request.find(" HTTP/", uriStart);
-                        if (uriEnd != std::string::npos) {
-                            requestUri = request.substr(uriStart, uriEnd - uriStart);
-                        }
-                    }
-                    
-                    std::cout << "URI solicitada: " << requestUri << std::endl;
-                    
-                    // Determinar qué error mostrar según la URI
-                    int errorCode = 200; // Por defecto, respuesta OK
-                    std::string content;
-                    
-                    if (requestUri == "/404" || requestUri.find("/notfound") != std::string::npos) {
-                        errorCode = 404;
-                    } else if (requestUri == "/403" || requestUri.find("/forbidden") != std::string::npos) {
-                        errorCode = 403;
-                    } else if (requestUri == "/500" || requestUri.find("/error") != std::string::npos) {
-                        errorCode = 500;
-                    } else {
-                        // Respuesta normal para otras rutas
-                        content = "<html><body><h1>WebServ está funcionando!</h1>";
-                        content += "<p>Para ver los errores, visita:</p>";
-                        content += "<ul>";
-                        content += "<li><a href='/403'>Error 403</a></li>";
-                        content += "<li><a href='/404'>Error 404</a></li>";
-                        content += "<li><a href='/500'>Error 500</a></li>";
-                        content += "</ul></body></html>";
-                    }
-                    
-                    // Generar respuesta según el código de error
-                    std::string response;
-                    if (errorCode != 200) {
-                        try {
-                            // Construir la ruta correcta al archivo de error
-                            std::stringstream ss;
-                            ss << errorCode;
-                            std::string errorPage = server.getRoot() + "/weberrors/" + ss.str() + ".html";
-                            std::cout << "Usando página de error: " << errorPage << std::endl;
-                            
-                            // Preparar encabezados según el código
-                            switch (errorCode) {
-                                case 404: response = "HTTP/1.1 404 Not Found\r\n"; break;
-                                case 403: response = "HTTP/1.1 403 Forbidden\r\n"; break;
-                                case 500: response = "HTTP/1.1 500 Internal Server Error\r\n"; break;
-                            }
-                            
-                            response += "Content-Type: text/html; charset=UTF-8\r\n";
-                            
-                            // Leer el archivo de error
-                            std::ifstream errorFile(errorPage.c_str());
-                            if (!errorFile.is_open()) {
-                                std::cerr << "No se pudo abrir la página de error: " << errorPage << std::endl;
-                                throw std::runtime_error("No se pudo abrir la página de error");
-                            }
-                            std::stringstream buffer;
-                            buffer << errorFile.rdbuf();
-                            content = buffer.str();
-                            errorFile.close();
-                        } catch (const std::exception& e) {
-                            std::cerr << "Error obteniendo página de error: " << e.what() << std::endl;
-                            response = "HTTP/1.1 500 Internal Server Error\r\n";
-                            response += "Content-Type: text/html; charset=UTF-8\r\n";
-                            content = "<html><body><h1>Error 500</h1><p>Error interno del servidor</p></body></html>";
-                        }
-                    } else {
-                        response = "HTTP/1.1 200 OK\r\n";
-                        response += "Content-Type: text/html; charset=UTF-8\r\n";
-                    }
-                    
-                    // Añadir contenido a la respuesta
-                    std::stringstream ss;
-                    ss << content.length();
-                    response += "Content-Length: " + ss.str() + "\r\n\r\n";
-                    response += content;
-                    
-                    // Enviar respuesta
-                    send(poll_fds[i].fd, response.c_str(), response.length(), 0);
-                    
-                    // Cerrar la conexión
-                    close(poll_fds[i].fd);
-                    poll_fds.erase(poll_fds.begin() + i);
-                    i--; // Ajustar índice
-                }
-            }
+				if (!(poll_fds[i].revents & POLLIN))
+					continue;
+
+				if (poll_fds[i].fd == server_fd) {
+					// Aceptar nueva conexión
+					struct sockaddr_in client_addr;
+					socklen_t client_len = sizeof(client_addr);
+					int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+					if (client_fd < 0) {
+						std::cerr << "Error al aceptar nueva conexión" << std::endl;
+						continue;
+					}
+					pollfd new_pollfd;
+					new_pollfd.fd = client_fd;
+					new_pollfd.events = POLLIN;
+					poll_fds.push_back(new_pollfd);
+				} else {
+					// Leer datos del cliente
+					char buffer[4096] = {0};
+					int bytesRead = recv(poll_fds[i].fd, buffer, sizeof(buffer) - 1, 0);
+
+					if (bytesRead <= 0) {
+						close(poll_fds[i].fd);
+						poll_fds.erase(poll_fds.begin() + i);
+						i--;
+						continue;
+					}
+
+					buffer[bytesRead] = '\0';
+					std::string request(buffer);
+					std::cout << "Petición recibida:\n" << request << std::endl; // <-- Añade esto
+
+
+					HttpRequest req;
+					HttpResponse res;
+					try {
+						req.parse(request);
+						std::cout << "Método: " << req.method << ", URI: " << req.uri << std::endl;
+
+						// Determinar si es una ruta de error
+						if (req.uri == "/404" || req.uri.find("/notfound") != std::string::npos) {
+							res.status_code = 404;
+							res.status_text = "Not Found";
+							std::ifstream errorFile(ref_server.getWebErrorPath(404).c_str());
+							if (errorFile.is_open()) {
+								std::stringstream buffer;
+								buffer << errorFile.rdbuf();
+								res.body = buffer.str();
+							} else {
+								res.body = "<html><body><h1>404 Not Found</h1></body></html>";
+							}
+						} else if (req.uri == "/403" || req.uri.find("/forbidden") != std::string::npos) {
+							res.status_code = 403;
+							res.status_text = "Forbidden";
+							std::ifstream errorFile(ref_server.getWebErrorPath(403).c_str());
+							if (errorFile.is_open()) {
+								std::stringstream buffer;
+								buffer << errorFile.rdbuf();
+								res.body = buffer.str();
+							} else {
+								res.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+							}
+						} else if (req.uri == "/500" || req.uri.find("/error") != std::string::npos) {
+							res.status_code = 500;
+							res.status_text = "Internal Server Error";
+							std::ifstream errorFile(ref_server.getWebErrorPath(500).c_str());
+							if (errorFile.is_open()) {
+								std::stringstream buffer;
+								buffer << errorFile.rdbuf();
+								res.body = buffer.str();
+							} else {
+								res.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+							}
+						} else {
+							// Respuesta normal
+							res = HttpHandler::handleRequest(req, ref_server);
+						}
+					} catch (const std::exception& e) {
+						res.status_code = 400;
+						res.status_text = "Bad Request";
+						res.body = "<html><body><h1>400 Bad Request</h1></body></html>";
+					}
+
+					std::ostringstream ss;
+					ss << res.body.length();
+					res.headers["Content-Type"] = "text/html; charset=UTF-8";
+					res.headers["Content-Length"] = ss.str();
+
+					std::string responseText = res.toString();
+					send(poll_fds[i].fd, responseText.c_str(), responseText.length(), 0);
+
+					close(poll_fds[i].fd);
+					poll_fds.erase(poll_fds.begin() + i);
+					i--;
+				}
+			}
         }
         
         // Cerrar socket principal
