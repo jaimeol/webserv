@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../inc/WebServ.hpp"
+#include "WebServ.hpp"
 #include "Location.hpp"
 
 // Tipos de archivos para getPathType

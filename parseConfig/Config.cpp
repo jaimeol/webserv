@@ -3,47 +3,52 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/03 10:03:22 by jolivare          #+#    #+#             */
-/*   Updated: 2025/05/15 11:15:23 by jolivare         ###   ########.fr       */
+/*   Created: 2025/06/07 11:46:37 by jolivare          #+#    #+#             */
+/*   Updated: 2025/06/07 20:07:12 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Config.hpp"
+#include "../inc/Config.hpp"
 
-Config::Config(std::string const &defaultPath): server_num(0)
+Config::Config(std::string const &configPath): server_num(0)
 {
-	std::string content = getConfigFile(defaultPath);
-	if (content.empty())
-		throw std::runtime_error("Empty file");
+	std::cout << "Reading config file: " << configPath << std::endl;
+	std::string content = readConfigFile(configPath);
+
+	std::cout << "Removing comments..." << std::endl;
 	removeComments(content);
-	saveConfigs(content);
-	if (this->server_configs.size() == 0 || this->server_num == 0)
-		throw std::runtime_error("No servers in file: " + defaultPath);
+	
+	std::cout << "Extracting server blocks..." << std::endl;
+	extractServerConfigs(content);
+	std::cout << "Server blocks extracted" << std::endl;
+
+	if (this->server_configs.empty())
+		throw std::runtime_error("No server config found in file");
+	std::cout << "Parsing servers" << std::endl;
+	parseServers();
+	std::cout << "Servers parsed" << std::endl;
+	printConfig();
 }
 
 Config::Config(Config const &copy)
 {
-	this->server_num = copy.server_num;
-	for (std::vector<std::string>::const_iterator it = copy.server_configs.begin(); it != copy.server_configs.end(); it++)
-		this->server_configs.push_back(*it);
+	*this = copy;
 }
 
-Config::~Config()
-{}
+Config::~Config() {}
 
-std::string Config::getConfigFile(std::string const &defaultPath)
+std::string Config::readConfigFile(std::string const &path)
 {
-	if (defaultPath.empty() || defaultPath.length() == 0)
-		throw std::runtime_error("File does not exist");
-	std::ifstream configFd(defaultPath.c_str());
-	if (!configFd || !configFd.is_open())
-		throw std::runtime_error("File does not exist");
-	std::string content, line;
-	while(std::getline(configFd, line))
-		content += line + "\n";
-	return content;
+	if (path.empty())
+		throw std::runtime_error("Empty file route");
+	std::ifstream file(path.c_str());
+	if (!file.is_open())
+		throw std::runtime_error("Could not open file: " + path);
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	return buffer.str();
 }
 
 void Config::removeComments(std::string &content)
@@ -51,351 +56,293 @@ void Config::removeComments(std::string &content)
 	size_t pos = content.find('#');
 	while (pos != std::string::npos)
 	{
-		size_t finalPos = content.find('\n', pos);
-		content.erase(pos, finalPos - pos);
-		pos = content.find('#');
-	}
-}
-
-void Config::saveConfigs(std::string &configContent)
-{
-	size_t start;
-
-	for (start = 0; configContent[start]; start++)
-	{
-		if (!isspace)
-		{
-			configContent = configContent.substr(start);
-			break;
-		}
-	}
-	if (configContent.find("server", 0) == std::string::npos)
-		throw std::runtime_error("No server config defined in file");
-	start = 0;
-	size_t end = 1;
-	while (start != end && start < configContent.length())
-	{
-		start = findStartPos(start, configContent);
-		if (start == std::string::npos)
-			break;
-		end = findEndPos(start, configContent);
+		size_t end = content.find('\n', pos);
 		if (end == std::string::npos)
-			throw std::runtime_error("Problem with scope");
-		this->server_configs.push_back(configContent.substr(start, end - start + 1));
-		this->server_num++;
-		start = end + 1;
-	}
-}
-
-size_t Config::findStartPos(size_t start, std::string &configContent)
-{
-	size_t i;
-	
-	for (i = start; configContent[i]; i++)
-	{
-		if (configContent[i] == 's')
-			break ;
-		if (!isspace(configContent[i]))
-			throw std::runtime_error("Wrong character out of server scope{}");
-	}
-	if (!configContent[i])
-		return std::string::npos;
-	if (configContent.compare(i, 6, "server") != 0)
-		throw std::runtime_error("Wrong character out of server scope{}");
-	i += 6;
-	while (configContent[i] && isspace(configContent[i]))
-		i++;
-	if (configContent[i] == '{')
-		return i;
-	else
-		throw std::runtime_error("Wrong character out of server scope{}");
-}
-
-size_t Config::findEndPos(size_t start, std::string &configContent)
-{
-	size_t i;
-	size_t scope;
-	
-	scope = 0;
-	for (i = start + 1; configContent[i]; i++)
-	{
-		if (configContent[i] == '{')
-			scope++;
-		if (configContent[i] == '}')
 		{
-			if (!scope)
-				return i;
-			scope--;
-		}
-	}
-	return std::string::npos;
-}
-
-void Config::removeFirstAndLastLine(std::string &str)
-{
-	size_t pos = str.find('\n');
-	if (pos == std::string::npos)
-		throw std::runtime_error("Wrong server configuration");
-	str = str.substr(pos + 1);
-	pos = str.rfind('\n');
-	if (pos == std::string::npos)
-		throw std::runtime_error("Wrong server configuration");
-	str = str.substr(0, pos);
-}
-
-void Config::removeInitialSpaces(std::string &str)
-{
-	for (size_t i = 0; i < str.length(); i++)
-	{
-		size_t iniPos = i;
-		while (isspace(str[i]))
-			i++;
-		str.erase(iniPos, i - iniPos);
-		i = iniPos;
-		while (str[i] && str[i] != '\n')
-			i++;
-	}
-}
-
-std::vector<std::string> Config::getContentVector(std::string &config)
-{
-	std::vector<std::string> content;
-	for (size_t i = 0; i < config.length(); i++)
-	{
-		if (config.substr(i, 8) == "location")
-		{
-			
-			size_t finalPos = config.find('}', i);
-			if (finalPos != std::string::npos)
-			{
-				size_t auxPos = config.find('\n', finalPos);
-				if (auxPos == std::string::npos)
-					auxPos = config.size() - 1;
-				while (isspace(config[auxPos]))
-					auxPos--;
-				if (auxPos != finalPos)
-					throw std::runtime_error("Location error: problem after scope {}");
-				content.push_back(config.substr(i, finalPos - i + 1));
-			}
-			else
-				throw std::runtime_error("Location error: problem with scope {}");
-			i = finalPos;
-		}
-		else
-		{
-			size_t finalPos = config.find('\n', i);
-			if (finalPos != std::string::npos)
-			{
-				while (isspace(config[finalPos - 1]))
-					finalPos--;
-				content.push_back(config.substr(i, finalPos - 1));
-			}
-			else
-			{
-				finalPos = config.length();
-				while (isspace(config[finalPos - 1]))
-					finalPos--;
-				content.push_back(config.substr(i, finalPos - i));
-			}
-		}
-		while (config[i] != '\n')
-			i++;
-	}
-	return content;
-}
-
-std::vector<std::string> Config::split_spaces(std::string &str)
-{
-	std::vector<std::string> res;
-	std::istringstream iss(str);
-	std::string word;
-	
-	while (iss >> word)
-		res.push_back(word);
-	return res;
-}
-
-std::string Config::getNamePath(std::string &locations)
-{
-	size_t i = 0;
-	while (locations[i] != ' ')
-		i++;
-	while (locations[i] == ' ')
-		i++;
-	size_t finalPos = i;
-	while (locations[finalPos] != ' ' &&  locations[finalPos] != '\n' && locations[finalPos] != '{')
-		finalPos++;
-	return locations.substr(i, finalPos - i);
-}
-
-std::vector<std::string> Config::getArgLocations(std::string &locations)
-{
-	size_t i = locations.find(' ');
-	while (locations[i] && isspace(locations[i]))
-		i++;
-	while (locations[i] && !isspace(locations[i]) && locations[i] != '{')
-		i++;
-	while (locations[i] && isspace(locations[i]))
-		i++;
-	if (locations[i] == '{')
-		throw std::runtime_error("Wrong location config");
-	i++;
-	while (isspace(locations[i]))
-		i++;
-	std::vector<std::string> args;
-	for (size_t z = i; locations[z]; z++)
-	{
-		while (locations[z] != '\n')
-		{
-			if (locations[z] == '}')
-				break;
-			z++;
-		}
-		if (locations[z] == '}')
+			content.erase(pos);
 			break;
-		if (z == std::string::npos)
-		{
-			args.push_back(locations.substr(i));
-			break ;
-		}
-		args.push_back(locations.substr(i, z - i));
-		i = z + 1;
-	}
-	return args;
-}
-
-void Config::vectorToServer(std::vector<std::string> &content, Server &server)
-{
-	std::vector<std::string>::iterator it;
-	for (it = content.begin(); it != content.end(); it++)
-	{
-		std::string param = *it;
-		if (param.substr(0, 6) == "listen" && param[6] == ' ')
-		{
-			std::string auxPort = param.substr(7);
-			removeInitialSpaces(auxPort);
-			server.setPort(auxPort);
-		}
-		else if (param.substr(0, 11) == "server_name" && param[11] == ' ')
-		{
-			std::string auxName = param.substr(12);
-			removeInitialSpaces(auxName);
-			server.setServerName(auxName);
-		}
-		else if (param.substr(0, 4) == "host" && param[4] == ' ')
-		{
-			std::string auxHost = param.substr(5);
-			removeInitialSpaces(auxHost);
-			server.setHost(auxHost);
-		}
-		else if (param.substr(0, 4) == "root" && param[4] == ' ')
-		{
-			std::string auxRoot = param.substr(5);
-			removeInitialSpaces(auxRoot);
-			server.setRoot(auxRoot);
-		}
-		else if (param.substr(0, 20) == "client_max_body_size" && param[20] == ' ')
-		{
-			std::string auxSize = param.substr(21);
-			removeInitialSpaces(auxSize);
-			server.setClientMaxBodySize(auxSize);
-		}
-		else if (param.substr(0, 5) == "index" && param[5] == ' ')
-		{
-			std::string auxIndex = param.substr(6);
-			removeInitialSpaces(auxIndex);
-			server.setIndex(auxIndex);
-		}
-		else if (param.substr(0, 9) == "autoindex" && param[9] == ' ')
-		{
-			std::string auxAutoI = param.substr(10);
-			removeInitialSpaces(auxAutoI);
-			server.setAutoIndex(auxAutoI);
-		}
-		else if (param.substr(0, 10) == "error_page" && param[10] == ' ')
-		{
-			std::string auxErrorPages = param.substr(11);
-			removeInitialSpaces(auxErrorPages);
-			std::vector<std::string> auxErrors = split_spaces(auxErrorPages); 
-			server.setErrorPages(auxErrors);
-		}
-		else if (param.substr(0, 8) == "location" && param[8] == ' ')
-		{
-			std::string auxLocation = param.substr(9);
-			std::vector<std::string> locations = getArgLocations(param);
-			server.setLocation(auxLocation, locations);
 		}
 		else
-			throw std::runtime_error("Undefined parameter: " + param);
+			content.erase(pos, end - pos);
+		pos = content.find('#', pos);
+	}
+}
+
+void Config::extractServerConfigs(std::string &configContent)
+{
+	size_t pos = 0;
+
+	while ((pos = configContent.find("server", pos)) != std::string::npos)
+	{
+		pos += 6;
+		pos = configContent.find('{', pos);
+		if (pos == std::string::npos)
+			throw std::runtime_error("Incorrect syntaxt: No opening brace");
+		int braceCount = 1;
+		size_t startPos = pos;
+		pos++;
+		while (braceCount > 0 && pos < configContent.length())
+		{
+			if (configContent[pos] == '{')
+				braceCount++;
+			else if (configContent[pos] == '}')
+				braceCount--;
+			pos++;
+		}
+		if (braceCount != 0)
+			throw std::runtime_error("Incorrect syntax: Disbalanced braces in server block");
+
+		std::string serverBlock = configContent.substr(startPos - 6, pos - startPos + 6);
+		this->server_configs.push_back(serverBlock);
+		this->server_num++;
+	}
+}
+
+void Config::parseServers()
+{
+	this->servers.clear();
+	for (size_t i = 0; i < this->server_configs.size(); i++)
+	{
+		Server newServ;
+		std::cout << "Parsing server block" << std::endl;
+		parseServerBlock(this->server_configs[i], newServ);
+		std::cout << "Server block parsed" << std::endl;
+
+		bool found_root = false;
+		for (std::vector<Location>::const_iterator it = newServ.getLocations().begin(); it < newServ.getLocations().end(); ++it)
+		{
+			std::cout << "Found location: " << it->getPath() << std::endl;
+			if (it -> getPath() == "/")
+			{
+				found_root = true;
+				break;
+			}
+		}
+		if (!found_root)
+			std::cout << "WARNING: could not find root location (/) in server: " << i + 1 << std::endl;
+		this->servers.push_back(newServ);
+		std::cout << "Added server with port " << newServ.getPort() << std::endl;
+	}
+	// for (size_t i = 0; i < this->servers.size(); i++)
+	// {
+	// 	for (size_t j = i + 1; j < this->servers.size(); i++)
+	// 	{}
+	// }
+
+	std::cout << "Total server configured: " << this->servers.size() << std::endl;
+}
+
+void Config::parseServerBlock(const std::string &serverBlock, Server &server)
+{
+	std::vector<std::string> lines = splitByLines(serverBlock);
+
+	size_t i = 0;
+	while (i < lines.size())
+	{
+		std::string line = lines[i];
+		
+		if (line.empty() || line.find("server") != std::string::npos)
+		{
+			i++;
+			continue;
+		}
+
+		if (line.find("location") == 0)
+		{
+			std::string locationBlock = line;
+			int braceCount = 0;
+
+			for (size_t j = 0; j < line.length(); j++)
+			{
+				if (line[j] == '{')
+					braceCount++;
+				else if (line[j] == '}')
+					braceCount--;
+			}
+			size_t j = i + 1;
+			while (braceCount > 0 && j < lines.size())
+			{
+				locationBlock += '\n' + lines[j];
+				
+				for (size_t k = 0; k < lines[j].length(); k++)
+				{
+					if (lines[j][k] == '{')
+						braceCount++;
+					else if (lines[j][k] == '}')
+						braceCount--;
+				}
+				j++;
+			}
+			if (braceCount != 0)
+				throw std::runtime_error("Incorrect syntax in block location: " + line);
+			std::cout << "Parsing location block" << std::endl;
+			std::pair<std::string, std::string> locationInfo = parseLocationBlock(locationBlock);
+			std::cout << "Parsed location block" << std::endl;
+			std::string path = locationInfo.first;
+			std::string content = locationInfo.second;
+
+			std::vector<std::string> locationDirectives = splitByLines(content);
+			for (size_t k = 0; k < locationDirectives.size(); k++)
+			{
+				size_t start = locationDirectives[k].find_first_not_of(" \t\r\n");
+				size_t end = locationDirectives[k].find_last_not_of(" \t\r\n");
+				
+				if (start != std::string::npos && end != std::string::npos)
+					locationDirectives[k] = locationDirectives[k].substr(start, end - start + 1);
+				else
+					locationDirectives[k] = "";
+			}
+			std::vector<std::string> filteredDirectives;
+			for (size_t k = 0; k < locationDirectives.size(); k++)
+			{
+				if (!locationDirectives[k].empty())
+					filteredDirectives.push_back(locationDirectives[k]);
+			}
+			std::cout << "Setting location" << std::endl;
+			server.setLocation(path, filteredDirectives);
+			std::cout << "Configured location " << path << " with " << filteredDirectives.size() << " directives" << std::endl;
+			i = j;
+		}
+		else
+		{
+			std::vector<std::string> parts = splitDirective(line);
+			if (parts.size() >= 2)
+			{
+				std::string directive = parts[0];
+				std::string value = parts[1];
+
+				if (!value.empty() && value[value.length() - 1] == ';')
+					value = value.substr(0, value.length() - 1);
+
+				if (directive == "listen")
+					server.setPort(value);
+				else if (directive == "host")
+					server.setHost(value);
+				else if (directive == "server_name")
+					server.setServerName(value);
+				else if (directive == "root")
+					server.setRoot(value);
+				else if (directive == "index")
+					server.setIndex(value);
+				else if (directive == "client_max_body_size")
+					server.setClientMaxBodySize(value);
+				else if (directive == "autoIndex")
+					server.setAutoIndex(value);
+				else if (directive == "error_page")
+				{
+					std::vector<std::string> errorPages;
+					for (size_t j = 1; j < parts.size(); j++)
+					{
+						std::string val = parts[j];
+						if (!val.empty() && val[val.length() - 1] == ';')
+							val = val.substr(0, val.length() - 1);
+						errorPages.push_back(val);
+					}
+					server.setErrorPages(errorPages);
+				}
+			}
+			i++;
+		}
 	}
 	if (server.getRoot().empty())
 	{
 		char *cwd = getcwd(NULL, 0);
-		std::string auxRoot(cwd);
-		free (cwd);
-		server.setRoot((auxRoot + ";").c_str());
+		std::string currentDir(cwd);
+		free(cwd);
+		server.setRoot(currentDir);
 	}
 	if (server.getName().empty())
-		server.setServerName("localhost;");
+		server.setServerName("localhost");
 	if (server.getPort() == 0)
-		server.setPort("80;");
+		server.setPort("80");
+
 	server.setWebErrors();
+	std::cout << "Server configured: " << server.getName() << ";" << server.getPort() << std::endl;
 }
 
-void Config::saveServers()
+std::vector<std::string> Config::splitByLines(const std::string &content)
 {
-	std::vector<std::string>::iterator it;
-	std::vector<short> allPorts;
-	for (it = this->server_configs.begin(); it != this->server_configs.end(); it++)
+	std::vector<std::string> lines;
+	std::string line;
+	std::istringstream stream(content);
+
+	while(std::getline(stream, line))
 	{
-		std::string servConf = *it;
-		removeFirstAndLastLine(servConf);
-		removeInitialSpaces(servConf);
-		std::vector<std::string> content = getContentVector(servConf);
-		
-		Server newServ;
-		vectorToServer(content, newServ);
-		bool found_root = false;
-		std::vector<Location>::const_iterator it;
-		allPorts.push_back(newServ.getPort());
-		for (it = newServ.getLocations().begin(); it != newServ.getLocations().end(); it++)
-		{
-			if (it->getPath() == "/")
-				found_root = true;
-		}
-		if (found_root == false)
-			throw std::runtime_error("Could not find location");
+		size_t start = line.find_first_not_of(" \t\r\n");
+		size_t end = line.find_last_not_of(" \t\r\n");
+		if (start != std::string::npos && end != std::string::npos)
+			lines.push_back(line.substr(start, end - start + 1));
+		else if (!line.empty())
+			lines.push_back("");
 	}
-	std::vector<short>::const_iterator it2;
-	for (it2 = allPorts.begin(); it2 != allPorts.end(); it2++)
-	{
-		std::vector<short>::const_iterator it3;
-		for (it3 = it2 + 1; it2 != allPorts.end(); it2++)
-		{
-			if (*it3 == *it2)
-				throw std::runtime_error("There can not be the same two ports in config file");
-		}
-	}
+	return lines;
 }
 
-void Config::printAllConfigs()
+std::vector<std::string> Config::splitDirective(const std::string &line)
 {
-	for(std::vector<std::string>::iterator it = this->server_configs.begin(); it != server_configs.end(); ++it)
+	std::vector<std::string> parts;
+	std::string part;
+	std::istringstream stream(line);
+
+	while (stream >> part)
 	{
-		removeFirstAndLastLine(*it);
-		removeInitialSpaces(*it);
-		std::cout << *it << std::endl;
+		parts.push_back(part);
 	}
+	return parts;
+}
+
+std::pair<std::string, std::string> Config::parseLocationBlock(const std::string &block)
+{
+	std::istringstream stream(block);
+	std::string word;
+	stream >> word;
+
+	if (word != "location")
+		throw std::runtime_error("Incorrect syntax in location block: it does not start with 'location'");
+	
+	stream >> word;
+	std::string path = word;
+	
+	size_t openBrace = block.find('{');
+	size_t closeBrace = block.find('}');
+
+	if (openBrace == std::string::npos || closeBrace == std::string::npos || closeBrace <= openBrace)
+		throw std::runtime_error("Incorrect syntax in location block: Braces not positioned correctly");
+	std::string content = block.substr(openBrace + 1, closeBrace - openBrace - 1);
+
+	return std::make_pair(path, content);
 }
 
 Server *Config::getServer(int i)
 {
-	if (i < this->server_num)
+	if (i >= 0 && i < (int)this->servers.size())
 		return &(this->servers[i]);
 	return NULL;
 }
 
-int Config::getServerNum()
+int Config::getServerNum() const
 {
 	return this->server_num;
+}
+
+void Config::printConfig()
+{
+	std::cout << "=== Current Config ===" << std::endl;
+	std::cout << "Server number: " << this->server_num << std::endl;
+
+	for (size_t i = 0; i < this->servers.size(); i++)
+	{
+		std::cout << "Server " << i + 1 << ": "
+			<< this->servers[i].getName() << ":"
+			<< this->servers[i].getPort() << std::endl;
+		
+		std::cout << " Locations: ";
+		const std::vector<Location> &locs = this->servers[i].getLocations();
+		for (size_t j = 0; j < locs.size(); j++)
+		{
+			std::cout << locs[j].getPath() << " ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << "=======================" << std::endl;
 }

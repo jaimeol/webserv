@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpisoner <rpisoner@student.42madrid.com>   +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/05/30 13:27:31 by rpisoner         ###   ########.fr       */
+/*   Updated: 2025/06/07 20:18:08 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "../inc/Server.hpp"
 
 Server::Server()
 {
@@ -242,13 +242,11 @@ void Server::setServerName(std::string name)
 {
 	if (!this->_name.empty())
 		return ;
-	validEOL(name);
 	this->_name = name;
 }
 
 void Server::setHost(std::string hostname)
 {
-    validEOL(hostname);
     std::string cleanHostname = hostname.substr(0, hostname.find(';'));
     
     if (cleanHostname == "localhost")
@@ -288,7 +286,7 @@ void Server::setHost(std::string hostname)
 
 void Server::setRoot(std::string root)
 {
-    validEOL(root);  // Verifica que termine con punto y coma
+    // validEOL(root);  // Verifica que termine con punto y coma
     
     // Extraer la parte útil antes del punto y coma
     std::string cleanRoot = root.substr(0, root.find(';'));
@@ -321,7 +319,7 @@ void Server::setFd(int fd)
 
 void Server::setPort(std::string port)
 {
-	validEOL(port);
+	// validEOL(port);
 	
 	try {
 		int finalPort = std::atoi(port.c_str());
@@ -337,7 +335,7 @@ void Server::setPort(std::string port)
 
 void Server::setClientMaxBodySize(std::string bodySize)
 {
-	validEOL(bodySize);
+	// validEOL(bodySize);
 	
 	try {
 		long finalSize = std::atol(bodySize.c_str());
@@ -378,7 +376,7 @@ void Server::setErrorPages(std::vector<std::string> web_errors)
 		
 		// Validar y preparar el path
 		std::string path = web_errors[i];
-		validEOL(path);
+		// validEOL(path);
 		
 		// Verificar que no sea un directorio
 		if (getPathType(path) == DIR_TYPE)
@@ -415,13 +413,13 @@ void Server::setErrorPages(std::vector<std::string> web_errors)
 
 void Server::setIndex(std::string &index)
 {
-	validEOL(index);
+	// validEOL(index);
 	this->_index = index;
 }
 
 void Server::setAutoIndex(std::string &autoI)
 {
-	validEOL(autoI);
+	// validEOL(autoI);
 	if (autoI == "on")
 		this->_autoindex = true;
 	else if (autoI == "off")
@@ -458,7 +456,7 @@ std::vector<std::string> Server::splitSpaces(std::string &methods)
 	size_t start = 0;
 	size_t end;
 	
-	while ((end = methods.find(' ', start) != std::string::npos))
+	while ((end = methods.find(' ', start)) != std::string::npos)
 	{
 		if (end != start)
 			finalVector.push_back(methods.substr(start, end - start));
@@ -509,8 +507,9 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 	bool saved_methods = false;
 	bool maxBodySize = false;
 	
+	std::cout << "Name: " << name << std::endl;
 	location.setPath(name);
-	for (size_t i = 0; i < src.size(); i++)
+	for (size_t i = 0; i < src.size(); ++i)
 	{
 		if (src[i].substr(0, 4) == "root" && paramsLeft(src[i], 4))
 		{
@@ -529,6 +528,9 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 				throw std::runtime_error("Duped allow_methods location: "+ src[i]);
 			std::string auxMethods = returnParams(src[i], 13);
 			validEOL(auxMethods);
+			size_t semicolonPos = auxMethods.find(';');
+			if (semicolonPos != std::string::npos)
+				auxMethods = auxMethods.substr(0, semicolonPos);
 			std::vector<std::string> methods = splitSpaces(auxMethods);
 			location.setMethods(methods);
 			saved_methods = true;
@@ -605,6 +607,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 		location.setClientBodySize(this->client_max_body_size);
 	tryLocation(location);
 	this->_locations.push_back(location);
+	
 }
 
 const std::string &Server::getName()

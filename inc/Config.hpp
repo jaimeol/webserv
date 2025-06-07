@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/01 10:47:16 by jolivare          #+#    #+#             */
-/*   Updated: 2025/05/03 15:11:50 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/07 19:37:58 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,23 +27,19 @@ class Config
 		Config(Config const &copy);
 		~Config();
 
-		std::string getConfigFile(std::string const &defaultPath);
+		std::string readConfigFile(std::string const &path);
 		void	removeComments(std::string &content);
-		void	saveConfigs(std::string &configContent);
-		size_t	findStartPos(size_t start, std::string &configContent);
-		size_t	findEndPos(size_t start, std::string &configContent);
-
-		void	removeFirstAndLastLine(std::string &str);
-		void	removeInitialSpaces(std::string &str);
-		std::vector<std::string> getContentVector(std::string &config);
-		void	vectorToServer(std::vector<std::string> &content, Server &server);
-		std::vector<std::string> split_spaces(std::string &str);
-		void	saveServers();
+		void	extractServerConfigs(std::string &configContent);
 		
-		std::vector<std::string> getArgLocations(std::string &locations);
-		std::string	getNamePath(std::string &locations);
-		Server	*getServer(int i);
-		int getServerNum();
-
-		void printAllConfigs();
+		void	parseServers();
+		void	parseServerBlock(const std::string &serverBlock, Server &server);
+		
+		std::vector<std::string> splitByLines(const std::string &content);
+		std::vector<std::string> splitDirective(const std::string &line);
+		std::pair<std::string, std::string> parseLocationBlock(const std::string &block);
+		
+		Server *getServer(int i);
+		int getServerNum() const;
+		
+		void printConfig();
 };

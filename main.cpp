@@ -1,6 +1,6 @@
-#include "parseConfig/Server.hpp"
+#include "inc/Server.hpp"
+#include "inc/Config.hpp"
 #include "./inc/HttpRequest.hpp"
-#include "./inc/HttpResponse.hpp"
 #include "./inc/HttpResponse.hpp"
 #include <signal.h>
 #include <poll.h>
@@ -10,7 +10,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include "./parseConfig/HttpHandler.hpp"
+#include "./inc/HttpHandler.hpp"
 
 volatile sig_atomic_t g_running = 1;
 
@@ -19,16 +19,20 @@ void signalHandler(int) {
 	std::cout << std::endl;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
     try {
         signal(SIGINT, signalHandler);
         
-		std::vector<Server> servers;
-		Server server;
-		server.setPort("8080;");
-		servers.push_back(server);
-		Server& ref_server = servers[0];
-
+        // Usar archivo de configuración
+        std::string configFile = (argc > 1) ? argv[1] : "simple_config.conf";
+        Config config(configFile);
+        // Obtener el primer servidor configurado
+        Server* serverPtr = config.getServer(0);
+        if (!serverPtr) {
+            std::cerr << "No se pudo cargar la configuración del servidor" << std::endl;
+            return 1;
+        }
+        Server& ref_server = *serverPtr;
         
         // Crear el servidor y verificar que se creó correctamente
         int server_fd = ref_server.createServer();
@@ -44,11 +48,11 @@ int main(void) {
             return 1;
         }
         
-        std::cout << "Servidor corriendo en http://localhost:" << ref_server.getPort() << "/" << std::endl;
+        std::cout << "Servidor corriendo en http://" << ref_server.getHost() << ":" << ref_server.getPort() << "/" << std::endl;
         std::cout << "Para probar errores, visita:" << std::endl;
-        std::cout << "  - http://localhost:" << ref_server.getPort() << "/403 (Forbidden)" << std::endl;
-        std::cout << "  - http://localhost:" << ref_server.getPort() << "/404 (Not Found)" << std::endl;
-        std::cout << "  - http://localhost:" << ref_server.getPort() << "/500 (Server Error)" << std::endl;
+        std::cout << "  - http://" << ref_server.getHost() << ":" << ref_server.getPort() << "/403 (Forbidden)" << std::endl;
+        std::cout << "  - http://" << ref_server.getHost() << ":" << ref_server.getPort() << "/404 (Not Found)" << std::endl;
+        std::cout << "  - http://" << ref_server.getHost() << ":" << ref_server.getPort() << "/500 (Server Error)" << std::endl;
         
         // Vector para manejar múltiples conexiones con poll
         std::vector<pollfd> poll_fds;

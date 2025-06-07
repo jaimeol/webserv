@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Location.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpisoner <rpisoner@student.42madrid.com>   +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 16:47:10 by jolivare          #+#    #+#             */
-/*   Updated: 2025/05/29 18:13:34 by rpisoner         ###   ########.fr       */
+/*   Updated: 2025/06/07 19:46:15 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../inc/WebServ.hpp"
+#include "WebServ.hpp"
 
 #ifndef LOCATION_HPP
 # define LOCATION_HPP

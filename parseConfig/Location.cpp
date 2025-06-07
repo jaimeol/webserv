@@ -6,11 +6,11 @@
 /*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 17:15:59 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/29 12:53:57 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/07 20:22:20 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Location.hpp"
+#include "../inc/Location.hpp"
 
 Location::Location()
 {
@@ -62,7 +62,7 @@ void Location::setAutoIndex(std::string const &state)
 	else if (state == "off")
 		this->_autoindex = false;
 	else
-		throw std::runtime_error("Wrong autoindex parameter");
+		throw std::runtime_error("Wrong autoindex parameter: " + state);
 }
 
 void Location::setMethods(std::vector<std::string> const &methods)
@@ -81,11 +81,11 @@ void Location::setMethods(std::vector<std::string> const &methods)
 				isValid = true;
 				break;
 			}
-			if (isValid)
-				this->_methods.push_back(methods[i]);
-			else
-				throw std::runtime_error("Invalid HTTP method: " + methods[i]);
 		}
+		if (isValid)
+			this->_methods.push_back(methods[i]);
+		else
+			throw std::runtime_error("Invalid HTTP method: " + methods[i]);
 	}
 }
 

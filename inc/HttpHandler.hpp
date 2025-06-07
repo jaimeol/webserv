@@ -3,18 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   HttpHandler.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpisoner <rpisoner@student.42madrid.com>   +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/29 17:49:17 by rpisoner          #+#    #+#             */
-/*   Updated: 2025/05/29 18:09:36 by rpisoner         ###   ########.fr       */
+/*   Updated: 2025/06/07 19:46:31 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HTTPHANDLER_HPP
 #define HTTPHANDLER_HPP
 
-#include "../inc/HttpRequest.hpp"
-#include "../inc/HttpResponse.hpp"
+#include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
 #include "Server.hpp"
 #include "Location.hpp"
 
