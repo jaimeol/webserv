@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/07 11:46:37 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/07 20:07:12 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/08 14:58:12 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,13 +22,11 @@ Config::Config(std::string const &configPath): server_num(0)
 	
 	std::cout << "Extracting server blocks..." << std::endl;
 	extractServerConfigs(content);
-	std::cout << "Server blocks extracted" << std::endl;
 
 	if (this->server_configs.empty())
 		throw std::runtime_error("No server config found in file");
 	std::cout << "Parsing servers" << std::endl;
 	parseServers();
-	std::cout << "Servers parsed" << std::endl;
 	printConfig();
 }
 
@@ -177,7 +175,6 @@ void Config::parseServerBlock(const std::string &serverBlock, Server &server)
 				throw std::runtime_error("Incorrect syntax in block location: " + line);
 			std::cout << "Parsing location block" << std::endl;
 			std::pair<std::string, std::string> locationInfo = parseLocationBlock(locationBlock);
-			std::cout << "Parsed location block" << std::endl;
 			std::string path = locationInfo.first;
 			std::string content = locationInfo.second;
 
@@ -257,7 +254,7 @@ void Config::parseServerBlock(const std::string &serverBlock, Server &server)
 		server.setPort("80");
 
 	server.setWebErrors();
-	std::cout << "Server configured: " << server.getName() << ";" << server.getPort() << std::endl;
+	std::cout << "Server configured: " << server.getName() << "; " << server.getPort() << std::endl;
 }
 
 std::vector<std::string> Config::splitByLines(const std::string &content)

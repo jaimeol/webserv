@@ -48,11 +48,11 @@ int main(int argc, char **argv) {
             return 1;
         }
         
-        std::cout << "Servidor corriendo en http://" << ref_server.getHost() << ":" << ref_server.getPort() << "/" << std::endl;
+        std::cout << "Servidor corriendo en http://" << ref_server.getName() << ":" << ref_server.getPort() << "/" << std::endl;
         std::cout << "Para probar errores, visita:" << std::endl;
-        std::cout << "  - http://" << ref_server.getHost() << ":" << ref_server.getPort() << "/403 (Forbidden)" << std::endl;
-        std::cout << "  - http://" << ref_server.getHost() << ":" << ref_server.getPort() << "/404 (Not Found)" << std::endl;
-        std::cout << "  - http://" << ref_server.getHost() << ":" << ref_server.getPort() << "/500 (Server Error)" << std::endl;
+        std::cout << "  - http://" << ref_server.getName() << ":" << ref_server.getPort() << "/403 (Forbidden)" << std::endl;
+        std::cout << "  - http://" << ref_server.getName() << ":" << ref_server.getPort() << "/404 (Not Found)" << std::endl;
+        std::cout << "  - http://" << ref_server.getName() << ":" << ref_server.getPort() << "/500 (Server Error)" << std::endl;
         
         // Vector para manejar múltiples conexiones con poll
         std::vector<pollfd> poll_fds;
@@ -110,44 +110,45 @@ int main(int argc, char **argv) {
 						req.parse(request);
 						std::cout << "Método: " << req.method << ", URI: " << req.uri << std::endl;
 
-						// Determinar si es una ruta de error
-						if (req.uri == "/404" || req.uri.find("/notfound") != std::string::npos) {
-							res.status_code = 404;
-							res.status_text = "Not Found";
-							std::ifstream errorFile(ref_server.getWebErrorPath(404).c_str());
-							if (errorFile.is_open()) {
-								std::stringstream buffer;
-								buffer << errorFile.rdbuf();
-								res.body = buffer.str();
-							} else {
-								res.body = "<html><body><h1>404 Not Found</h1></body></html>";
-							}
-						} else if (req.uri == "/403" || req.uri.find("/forbidden") != std::string::npos) {
-							res.status_code = 403;
-							res.status_text = "Forbidden";
-							std::ifstream errorFile(ref_server.getWebErrorPath(403).c_str());
-							if (errorFile.is_open()) {
-								std::stringstream buffer;
-								buffer << errorFile.rdbuf();
-								res.body = buffer.str();
-							} else {
-								res.body = "<html><body><h1>403 Forbidden</h1></body></html>";
-							}
-						} else if (req.uri == "/500" || req.uri.find("/error") != std::string::npos) {
-							res.status_code = 500;
-							res.status_text = "Internal Server Error";
-							std::ifstream errorFile(ref_server.getWebErrorPath(500).c_str());
-							if (errorFile.is_open()) {
-								std::stringstream buffer;
-								buffer << errorFile.rdbuf();
-								res.body = buffer.str();
-							} else {
-								res.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
-							}
-						} else {
-							// Respuesta normal
-							res = HttpHandler::handleRequest(req, ref_server);
-						}
+						// // Determinar si es una ruta de error
+						// if (req.uri == "/404" || req.uri.find("/notfound") != std::string::npos) {
+						// 	res.status_code = 404;
+						// 	res.status_text = "Not Found";
+						// 	std::ifstream errorFile(ref_server.getWebErrorPath(404).c_str());
+						// 	if (errorFile.is_open()) {
+						// 		std::stringstream buffer;
+						// 		buffer << errorFile.rdbuf();
+						// 		res.body = buffer.str();
+						// 	} else {
+						// 		res.body = "<html><body><h1>404 Not Found</h1></body></html>";
+						// 	}
+						// } else if (req.uri == "/403" || req.uri.find("/forbidden") != std::string::npos) {
+						// 	res.status_code = 403;
+						// 	res.status_text = "Forbidden";
+						// 	std::ifstream errorFile(ref_server.getWebErrorPath(403).c_str());
+						// 	if (errorFile.is_open()) {
+						// 		std::stringstream buffer;
+						// 		buffer << errorFile.rdbuf();
+						// 		res.body = buffer.str();
+						// 	} else {
+						// 		res.body = "<html><body><h1>403 Forbidden</h1></body></html>";
+						// 	}
+						// } else if (req.uri == "/500" || req.uri.find("/error") != std::string::npos) {
+						// 	res.status_code = 500;
+						// 	res.status_text = "Internal Server Error";
+						// 	std::ifstream errorFile(ref_server.getWebErrorPath(500).c_str());
+						// 	if (errorFile.is_open()) {
+						// 		std::stringstream buffer;
+						// 		buffer << errorFile.rdbuf();
+						// 		res.body = buffer.str();
+						// 	} else {
+						// 		res.body = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+						// 	}
+						// } else {
+						// 	// Respuesta normal
+						// 	res = HttpHandler::handleRequest(req, ref_server);
+						// }
+						res = HttpHandler::handleRequest(req, ref_server);
 					} catch (const std::exception& e) {
 						res.status_code = 400;
 						res.status_text = "Bad Request";

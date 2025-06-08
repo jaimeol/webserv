@@ -34,6 +34,7 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
     res.version = "HTTP/1.1";
 
     std::string fullPath = loc.getRoot() + req.uri;
+    std::cout << "FULL PATH: " << fullPath << std::endl;
 
     if (isFile(fullPath)) {
         res.status_code = 200;

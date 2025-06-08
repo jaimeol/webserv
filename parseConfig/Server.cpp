@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/07 20:18:08 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/08 16:35:01 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,8 +179,8 @@ void Server::tryStandardLocation(Location &location)
 		
 	if (!location.getReturnPath().empty() && 
 		!fileExistAndReadable(location.getRoot(), location.getReturnPath()))
-		throw std::runtime_error("Error validating return location");
-		
+		throw std::runtime_error("Error validating return location " + location.getReturnPath());
+
 	if (!location.getAlias().empty() && 
 		!fileExistAndReadable(location.getRoot(), location.getAlias()))
 		throw std::runtime_error("Error validating alias");
@@ -250,7 +250,10 @@ void Server::setHost(std::string hostname)
     std::string cleanHostname = hostname.substr(0, hostname.find(';'));
     
     if (cleanHostname == "localhost")
+	{
+		std::cout << "Entra en el if" << std::endl;
         cleanHostname = "127.0.0.1";
+	}
         
     if (!validHost(cleanHostname))
     {
@@ -420,9 +423,9 @@ void Server::setIndex(std::string &index)
 void Server::setAutoIndex(std::string &autoI)
 {
 	// validEOL(autoI);
-	if (autoI == "on")
+	if (autoI == "on;")
 		this->_autoindex = true;
-	else if (autoI == "off")
+	else if (autoI == "off;")
 		this->_autoindex = false;
 	else
 		throw std::runtime_error("Invalid autoindex value: " + autoI);	
@@ -506,8 +509,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 	Location location;
 	bool saved_methods = false;
 	bool maxBodySize = false;
-	
-	std::cout << "Name: " << name << std::endl;
+
 	location.setPath(name);
 	for (size_t i = 0; i < src.size(); ++i)
 	{
@@ -517,6 +519,9 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 				throw std::runtime_error("Duped root in Location: " + src[i]);
 			std::string auxRoot = returnParams(src[i], 4);
 			validEOL(auxRoot);
+			size_t semicolonPos = auxRoot.find(';');
+			if (semicolonPos != std::string::npos)
+				auxRoot = auxRoot.substr(0, semicolonPos);
 			if (getPathType(auxRoot) == 2)
 				location.setRoot(auxRoot);
 			else
@@ -539,13 +544,15 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 		{
 			std::string auxAutoI = returnParams(src[i], 9);
 			validEOL(auxAutoI);
-			location.setAutoIndex(src[i]);
+			std::cout << "AutoI: " << auxAutoI << std::endl;
+			location.setAutoIndex(auxAutoI);
 		}
 		else if (src[i].substr(0, 5) == "index" && paramsLeft(src[i], 5))
 		{
 			std::string auxIndex = returnParams(src[i], 5);
 			validEOL(auxIndex);
-			location.setIndex(src[i]);
+			location.setIndex(auxIndex);
+			std::cout << "index: " << location.getIndex() << std::endl;
 		}
 		else if (src[i].substr(0, 6) == "return" && paramsLeft(src[i], 6))
 		{
@@ -555,6 +562,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 				throw std::runtime_error("Return parameter not allowed");
 			if (!location.getReturnPath().empty())
 				throw std::runtime_error("Duped return parameter");
+			
 			location.setReturnPath(auxReturn);
 		}
 		else if (src[i].substr(0, 5) == "alias" && paramsLeft(src[i], 5))
