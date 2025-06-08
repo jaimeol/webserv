@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>rpisoner & jaimeol</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000000;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      perspective: 1000px;
+    }
+
+    .container {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .box-wrapper {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 1s ease forwards;
+    }
+
+    .box-wrapper:nth-child(1) { animation-delay: 0.3s; }
+    .box-wrapper:nth-child(2) { animation-delay: 0.5s; }
+
+    .box {
+      position: relative;
+      padding: 2rem 3rem;
+      border-radius: 20px;
+      font-size: 1.8rem;
+      font-weight: bold;
+      width: 200px;
+      text-align: center;
+      color: white;
+      background: rgba(60, 60, 60, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      transition: transform 0.2s ease;
+      transform-style: preserve-3d;
+      overflow: hidden;
+    }
+
+    .box::before {
+      content: "";
+      position: absolute;
+      top: var(--y, 50%);
+      left: var(--x, 50%);
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+      pointer-events: none;
+      transition: opacity 0.3s;
+      opacity: 0;
+      z-index: 0;
+    }
+
+    .box:hover::before {
+      opacity: 1;
+    }
+
+    .footer {
+      font-size: 1.2rem;
+      color: white;
+      font-style: italic;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 1s ease forwards;
+      animation-delay: 0.8s;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <div class="content">
+    <div class="container">
+      <div class="box-wrapper">
+        <div class="box">rpisoner</div>
+      </div>
+      <div class="box-wrapper">
+        <div class="box">jaimeol</div>
+      </div>
+    </div>
+    <div class="footer">Welcome to our webserv</div>
+  </div>
+
+  <script>
+    // Partículas
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function createParticles(count) {
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 2 + 1,
+          speedX: Math.random() * 1.5 + 0.5,
+          speedY: (Math.random() - 0.5) * 0.5,
+          alpha: Math.random() * 0.5 + 0.3
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (let p of particles) {
+        p.x += p.speedX;
+        p.y += p.speedY;
+        if (p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+          p.x = -10;
+          p.y = Math.random() * canvas.height;
+        }
+      }
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+        ctx.fill();
+      }
+    }
+
+    function animate() {
+      updateParticles();
+      drawParticles();
+      requestAnimationFrame(animate);
+    }
+
+    createParticles(150);
+    animate();
+
+    // Inclinación y luz puntual en .box
+    const boxes = document.querySelectorAll('.box');
+
+    boxes.forEach(box => {
+      box.addEventListener('mousemove', e => {
+        const rect = box.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = ((y - centerY) / centerY) * -20;
+        const rotateY = ((x - centerX) / centerX) * 20;
+        box.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+        box.style.setProperty('--x', `${x}px`);
+        box.style.setProperty('--y', `${y}px`);
+      });
+
+      box.addEventListener('mouseleave', () => {
+        box.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        box.style.removeProperty('--x');
+        box.style.removeProperty('--y');
+      });
+    });
+  </script>
+</body>
+</html>
