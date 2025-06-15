@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/08 16:35:01 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/15 17:52:08 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,54 +116,55 @@ std::string Server::getCurrentWorkingDir()
 
 void Server::tryCgiLocation(Location &location)
 {
-	if (location.getCgiExtension().empty() || location.getCgiPath().empty())
-		throw std::runtime_error("Wrong cgi configuration");
-	
-	if (access(location.getIndex().c_str(), 4) < 0)
+	if (location.getCgiExtension().empty())
+		throw std::runtime_error("Empty CGI config");
+	else if (location.getCgiPath().empty())
+		throw std::runtime_error("Empty cgi path");
+	if (access(location.getIndex().c_str(), R_OK) < 0)
 	{
-		std::string auxIndex = location.getRoot() + "/" + location.getIndex();
+		std::string auxIndex = location.getRoot() + location.getPath() + "/" + location.getIndex();
 		if (getPathType(location.getIndex()) != -1)
 		{
 			std::string rootPath = getCurrentWorkingDir();
 			location.setRoot(rootPath);
-			auxIndex = rootPath + location.getPath() + "/" + location.getIndex();
+			auxIndex = rootPath + location.getPath()  + location.getIndex();
 		}
-		
-		if (auxIndex.empty() || getPathType(auxIndex) == -1 || access(auxIndex.c_str(), 4) < 0)
-			throw std::runtime_error("Wrong cgi configuration");
-			
-		validateCgiPathsAndExtensions(location);
+		if (auxIndex.empty() || getPathType(auxIndex) == -1 || access(auxIndex.c_str(), R_OK) < 0)
+			throw std::runtime_error("Wrong cgi configuration: " + auxIndex);
+		// validateCgiPathsAndExtensions(location);
 	}
-}
 
-void Server::validateCgiPathsAndExtensions(Location &location)
-{
 	std::vector<std::string>::const_iterator it;
-	// Verificar que las rutas CGI existen
-	for (it = location.getCgiPath().begin(); it != location.getCgiPath().end(); it++)
-	{
-		if (getPathType(*it) > 0)
-			throw std::runtime_error("Wrong cgi configuration");
-	}
-	
-	// Mapear extensiones con sus intérpretes
 	std::vector<std::string>::const_iterator itPath;
-	for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); it++)
+	for (it = location.getCgiPath().begin(); it != location.getCgiPath().end(); ++it)
+	{
+		// removeSemicolon(*it);
+		if (getPathType(*it) != 1)
+			throw std::runtime_error("Invalid CGI interpreter path: " + *it);
+		if (access(it->c_str(), X_OK) < 0)
+			throw std::runtime_error("CGI interpreter not executable: " + *it);
+	}
+
+	for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); ++it)
 	{
 		if (*it != ".py" && *it != ".sh")
-			throw std::runtime_error("Wrong cgi extension");
-			
-		for (itPath = location.getCgiPath().begin(); itPath != location.getCgiPath().end(); itPath++)
-		{
-			if (*it == ".py" && (*itPath).find("python") != std::string::npos)
+			throw std::runtime_error("Unsupported CGI extension: " + *it);
+		bool hasValidInterpreter = false;
+		for (itPath = location.getCgiPath().begin(); itPath != location.getCgiPath().end(); ++itPath)
+		{	
+			if ((*it == ".py" && (*itPath).find("python") != std::string::npos) ||
+			(*it == ".sh" && (*itPath).find("bash") != std::string::npos))
+			{
 				location.setCgiPairs(*it, *itPath);
-			else if (*it == ".sh" && (*itPath).find("bash") != std::string::npos)
-				location.setCgiPairs(*it, *itPath);
+				hasValidInterpreter = true;
+				break;
+			}	
 		}
+		if (!hasValidInterpreter)
+			throw std::runtime_error("No valid interpreter found for extension: " + *it);
 	}
-	
 	if (location.getCgiPath().size() != location.getCgiExtension().size())
-		throw std::runtime_error("Wrong cgi configuration");
+		throw std::runtime_error("Mismatch between CGI extensions and interpreters");
 }
 
 void Server::tryStandardLocation(Location &location)
@@ -172,14 +173,20 @@ void Server::tryStandardLocation(Location &location)
 		throw std::runtime_error("Error validating location path");
 		
 	if (location.getRoot().empty())
-		location.setRoot(this->_root);
+	{
+		if (location.getPath() == "/cgi-bin")
+			location.setRoot(".");
+		else if (location.getPath() == "/")
+			location.setRoot(".");
+		else
+			location.setRoot(this->_root);
+	}
 		
 	if (fileExistAndReadable(location.getRoot() + location.getPath() + "/", location.getIndex()))
 		return;
 		
-	if (!location.getReturnPath().empty() && 
-		!fileExistAndReadable(location.getRoot(), location.getReturnPath()))
-		throw std::runtime_error("Error validating return location " + location.getReturnPath());
+	if (!location.getReturnPath().empty())
+		return;
 
 	if (!location.getAlias().empty() && 
 		!fileExistAndReadable(location.getRoot(), location.getAlias()))
@@ -216,25 +223,29 @@ void Server::validEOL(std::string const token)
 
 void Server::setWebErrors()
 {
-	std::string aux404 = getCurrentWorkingDir();
+	std::string currentDir = getCurrentWorkingDir();
+	std::string errorPath = currentDir + "/www/weberrors/";
 
 	if (this->_web_errors[403].empty())
 	{
-		if (access((aux404 + "./www/weberrors/403.html").c_str(), 4) == -1)
+		std::string path403 = errorPath + "403.html";
+		if (access(path403.c_str(), R_OK) == -1)
 			throw std::runtime_error("Could not access default error 403 page");
-		this->_web_errors[403] = (aux404 + "/weberrors/403.html").c_str();
+		this->_web_errors[403] = path403;
 	}
 	if (this->_web_errors[404].empty())
 	{
-		if (access((aux404 + "./www/weberrors/404.html").c_str(), 4) == -1)
+		std::string path404 = errorPath + "404.html";
+		if (access(path404.c_str(), R_OK) == -1)
 			throw std::runtime_error("Could not access default error 404 page");
-		this->_web_errors[404] = (aux404 + "/weberrors/404.html").c_str();
+		this->_web_errors[404] = path404;
 	}
 	if (this->_web_errors[500].empty())
 	{
-		if (access((aux404 + "./www/weberrors/500.html").c_str(), 4) == -1)
+		std::string path500 = errorPath + "500.html";
+		if (access(path500.c_str(), R_OK) == -1)
 			throw std::runtime_error("Could not access default error 500 page");
-		this->_web_errors[500] = (aux404 + "/weberrors/500.html").c_str();
+		this->_web_errors[500] = path500;
 	}
 }
 
@@ -388,17 +399,16 @@ void Server::setErrorPages(std::vector<std::string> web_errors)
 		// Asegurar que hay un root path válido
 		if ((this->_root).empty())
 		{
-			char *cwd = getcwd(NULL, 0);
-			if (!cwd)
-				throw std::runtime_error("Failed to get current working directory");
-			
-			std::string auxRoot(cwd);
-			free(cwd);
-			this->setRoot((auxRoot + ";").c_str());
+			std::string currentDir = getCurrentWorkingDir();
+			this->setRoot(currentDir + ";");
 		}
 		
 		// Validar que el archivo existe y es accesible
 		std::string fullPath = this->_root + path;
+		if (path[0] == '/')
+			fullPath = this->_root + path;
+		else
+			fullPath = this->_root + "/" + path;
 		if (getPathType(fullPath) != FILE_TYPE)
 			throw std::runtime_error("Invalid page error path (file not found): " + path);
 		
@@ -504,6 +514,13 @@ void Server::addLocation(const Location& location) {
     this->_locations.push_back(location);
 }
 
+
+static void removeSemicolon(std::string &src)
+{
+	size_t semicolonPos = src.find(';');
+	if (semicolonPos != std::string::npos)
+		src = src.substr(0, semicolonPos);
+}
 void Server::setLocation(std::string name, std::vector<std::string> &src)
 {
 	Location location;
@@ -519,13 +536,19 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 				throw std::runtime_error("Duped root in Location: " + src[i]);
 			std::string auxRoot = returnParams(src[i], 4);
 			validEOL(auxRoot);
-			size_t semicolonPos = auxRoot.find(';');
-			if (semicolonPos != std::string::npos)
-				auxRoot = auxRoot.substr(0, semicolonPos);
-			if (getPathType(auxRoot) == 2)
+			removeSemicolon(auxRoot);
+			if (name == "/cgi-bin")
+			{
+				location.setRoot(".");
+			}
+			else if (auxRoot == "." || auxRoot == "./")
+				location.setRoot(".");
+			else if (getPathType(auxRoot) == 2)
+				location.setRoot(getCurrentWorkingDir());
+			else if (auxRoot[0] == '/')
 				location.setRoot(auxRoot);
 			else
-				location.setRoot(this->_root + auxRoot);
+				location.setRoot(auxRoot);
 		}
 		else if (src[i].substr(0, 13) == "allow_methods" && paramsLeft(src[i], 13))
 		{
@@ -533,9 +556,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 				throw std::runtime_error("Duped allow_methods location: "+ src[i]);
 			std::string auxMethods = returnParams(src[i], 13);
 			validEOL(auxMethods);
-			size_t semicolonPos = auxMethods.find(';');
-			if (semicolonPos != std::string::npos)
-				auxMethods = auxMethods.substr(0, semicolonPos);
+			removeSemicolon(auxMethods);
 			std::vector<std::string> methods = splitSpaces(auxMethods);
 			location.setMethods(methods);
 			saved_methods = true;
@@ -544,6 +565,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 		{
 			std::string auxAutoI = returnParams(src[i], 9);
 			validEOL(auxAutoI);
+			removeSemicolon(auxAutoI);
 			std::cout << "AutoI: " << auxAutoI << std::endl;
 			location.setAutoIndex(auxAutoI);
 		}
@@ -551,6 +573,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 		{
 			std::string auxIndex = returnParams(src[i], 5);
 			validEOL(auxIndex);
+			removeSemicolon(auxIndex);
 			location.setIndex(auxIndex);
 			std::cout << "index: " << location.getIndex() << std::endl;
 		}
@@ -558,17 +581,18 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 		{
 			std::string auxReturn = returnParams(src[i], 6);
 			validEOL(auxReturn);
+			removeSemicolon(auxReturn);
 			if (auxReturn == "/cgi-bin")
 				throw std::runtime_error("Return parameter not allowed");
 			if (!location.getReturnPath().empty())
 				throw std::runtime_error("Duped return parameter");
-			
 			location.setReturnPath(auxReturn);
 		}
 		else if (src[i].substr(0, 5) == "alias" && paramsLeft(src[i], 5))
 		{
 			std::string auxAlias = returnParams(src[i], 5);
 			validEOL(auxAlias);
+			removeSemicolon(auxAlias);
 			if (auxAlias == "/cgi-bin")
 				throw std::runtime_error ("Alias parameter not allowed");
 			if (!location.getAlias().empty())
@@ -579,6 +603,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 		{
 			std::string auxExt = returnParams(src[i], 7);
 			validEOL(auxExt);
+			removeSemicolon(auxExt);
 			std::vector<std::string> extensions;
 			parseExtensions(extensions, auxExt);
 			location.setCgiExt(extensions);
@@ -587,6 +612,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 		{
 			std::string auxPath = returnParams(src[i], 8);
 			validEOL(auxPath);
+			removeSemicolon(auxPath);
 			std::vector<std::string> paths;
 			parseCgiPath(paths, auxPath);
 			location.setCgiPath(paths);
@@ -597,6 +623,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 				throw std::runtime_error("Duped client max body size parameter");
 			std::string auxSize = returnParams(src[i], 20);
 			validEOL(auxSize);
+			removeSemicolon(auxSize);
 			for (size_t i = 0; i < auxSize.length(); i++)
 			{
 				if (!isdigit(auxSize[i]))

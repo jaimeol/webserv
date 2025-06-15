@@ -32,10 +32,14 @@ std::string HttpHandler::readFileContent(const std::string& path) {
 HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc) {
     HttpResponse res;
     res.version = "HTTP/1.1";
-
-    std::string fullPath = loc.getRoot() + req.uri;
-    std::cout << "FULL PATH: " << fullPath << std::endl;
-
+	std::cout << "Location root " << loc.getRoot() << std::endl;
+	std::cout << "Location path " << loc.getPath() << std::endl;
+    std::string fullPath;
+	if (loc.getPath() == "/cgi-bin")
+		fullPath = "." + req.uri;
+	else
+		fullPath = loc.getRoot() + req.uri;
+	std::cout << "FULL PATH: " << fullPath << std::endl;
     if (isFile(fullPath)) {
         res.status_code = 200;
         res.status_text = "OK";

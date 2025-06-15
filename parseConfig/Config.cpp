@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/07 11:46:37 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/08 14:58:12 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/15 17:11:17 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -317,7 +317,7 @@ Server *Config::getServer(int i)
 	return NULL;
 }
 
-int Config::getServerNum() const
+size_t Config::getServerNum() const
 {
 	return this->server_num;
 }

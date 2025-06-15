@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+         #
+#    By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:35:06 by jolivare          #+#    #+#              #
-#    Updated: 2025/06/08 11:38:53 by jolivare         ###   ########.fr        #
+#    Updated: 2025/06/15 16:42:44 by jolivare         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -35,6 +35,6 @@ c: all clean
 re: fclean all
 
 run: all clean
-	./$(NAME) simple_config.conf
+	./$(NAME) config.conf
 
 .PHONY: all clean fclean re run c

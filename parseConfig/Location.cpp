@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 17:15:59 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/08 11:30:05 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/15 17:18:15 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,9 +57,9 @@ void Location::setIndex(std::string const &index)
 
 void Location::setAutoIndex(std::string const &state)
 {
-	if (state == "on;")
+	if (state == "on")
 		this->_autoindex = true;
-	else if (state == "off;")
+	else if (state == "off")
 		this->_autoindex = false;
 	else
 		throw std::runtime_error("Wrong autoindex parameter: " + state);

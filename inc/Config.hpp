@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/01 10:47:16 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/07 19:37:58 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/15 16:48:24 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ class Server;
 class Config
 {
 	private:
-		int server_num;
+		size_t server_num;
 		std::vector<std::string> server_configs;
 		std::vector<Server> servers;
 	public:
@@ -39,7 +39,7 @@ class Config
 		std::pair<std::string, std::string> parseLocationBlock(const std::string &block);
 		
 		Server *getServer(int i);
-		int getServerNum() const;
+		size_t getServerNum() const;
 		
 		void printConfig();
 };
