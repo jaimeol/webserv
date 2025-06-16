@@ -1,38 +1,78 @@
 #!/usr/bin/python3
 
 import os
-import sys
 import datetime
 
-# Send HTTP headers
 print("Content-type: text/html\n")
 
-# Start HTML output
+current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# Empieza el HTML
 print("""
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>CGI Test Info</title>
+    <meta charset="UTF-8">
+    <title>Información del Servidor</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .info { background: #f0f0f0; padding: 20px; border-radius: 5px; }
-        .time { color: #2c3e50; font-size: 2em; margin: 20px 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .time {
+            font-size: 1.5em;
+            margin: 20px 0;
+            color: #16a085;
+        }
+        .env {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .env ul {
+            list-style: none;
+            padding: 0;
+        }
+        .env li {
+            margin-bottom: 10px;
+        }
+        .env strong {
+            color: #2980b9;
+        }
+        .footer {
+            margin-top: 30px;
+            font-style: italic;
+            color: #888;
+        }
     </style>
 </head>
 <body>
+    <h1>🖥️ Información del Servidor CGI</h1>
 """)
 
-# Current time
-current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-print(f"<div class='time'>Current Time: {current_time}</div>")
+print(f"""    <div class="time">Hora actual: {current_time}</div>""")
 
-# Server information
-print("<div class='info'>")
-print("<h2>Environment Variables:</h2>")
-print("<ul>")
+print("""
+    <div class="env">
+        <h2>Variables de entorno:</h2>
+        <ul>
+""")
+
 for param in sorted(os.environ.keys()):
-    print(f"<li><strong>{param}:</strong> {os.environ[param]}</li>")
-print("</ul>")
-print("</div>")
+    print(f"<li><strong>{param}</strong>: {os.environ[param]}</li>")
 
-print("</body></html>")
+print("""
+        </ul>
+    </div>
+    <div class="footer">Generado dinámicamente con Python CGI.</div>
+</body>
+</html>
+""")

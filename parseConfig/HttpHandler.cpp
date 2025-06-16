@@ -14,6 +14,7 @@ static bool isFile(const std::string& path) {
 Location HttpHandler::matchLocation(const std::string& uri, const Server& server) {
     const std::vector<Location>& locs = server.getLocations();
     for (size_t i = 0; i < locs.size(); i++) {
+        std::cout << "Root: " << locs[i].getRoot() << std::endl;
         if (uri.find(locs[i].getPath()) == 0)
             return locs[i];
     }
@@ -34,6 +35,7 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
     res.version = "HTTP/1.1";
 	std::cout << "Location root " << loc.getRoot() << std::endl;
 	std::cout << "Location path " << loc.getPath() << std::endl;
+    std::cout << "Location index: " << loc.getIndex() << std::endl;
     std::string fullPath;
 	if (loc.getPath() == "/cgi-bin")
 		fullPath = "." + req.uri;

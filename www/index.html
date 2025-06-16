@@ -41,6 +41,7 @@
     .box-wrapper:nth-child(2) { animation-delay: 0.5s; }
 
     .box {
+      display: inline-block;
       position: relative;
       padding: 2rem 3rem;
       border-radius: 20px;
@@ -53,24 +54,30 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.5);
-      transition: transform 0.2s ease;
-      transform-style: preserve-3d;
+      text-decoration: none;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
       overflow: hidden;
+      cursor: pointer;
+    }
+
+    .box:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
     }
 
     .box::before {
       content: "";
       position: absolute;
-      top: var(--y, 50%);
-      left: var(--x, 50%);
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
       width: 120px;
       height: 120px;
       border-radius: 50%;
       background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
       pointer-events: none;
-      transition: opacity 0.3s;
       opacity: 0;
+      transition: opacity 0.3s;
       z-index: 0;
     }
 
@@ -110,17 +117,16 @@
   <div class="content">
     <div class="container">
       <div class="box-wrapper">
-        <div class="box">rpisoner</div>
+        <a href="https://profile.intra.42.fr/users/rpisoner" class="box" target="_blank">rpisoner</a>
       </div>
       <div class="box-wrapper">
-        <div class="box">jaimeol</div>
+        <a href="https://profile.intra.42.fr/users/jolivare" class="box" target="_blank">jaimeol</a>
       </div>
     </div>
     <div class="footer">Welcome to our webserv</div>
   </div>
 
   <script>
-    // Partículas
     const canvas = document.getElementById('particles');
     const ctx = canvas.getContext('2d');
     let particles = [];
@@ -176,32 +182,6 @@
 
     createParticles(150);
     animate();
-
-    // Inclinación y luz puntual en .box
-    const boxes = document.querySelectorAll('.box');
-
-    boxes.forEach(box => {
-      box.addEventListener('mousemove', e => {
-        const rect = box.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-
-        const rotateX = ((y - centerY) / centerY) * -20;
-        const rotateY = ((x - centerX) / centerX) * 20;
-        box.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
-        box.style.setProperty('--x', `${x}px`);
-        box.style.setProperty('--y', `${y}px`);
-      });
-
-      box.addEventListener('mouseleave', () => {
-        box.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        box.style.removeProperty('--x');
-        box.style.removeProperty('--y');
-      });
-    });
   </script>
 </body>
 </html>

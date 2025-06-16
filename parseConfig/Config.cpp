@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/07 11:46:37 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/15 17:11:17 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/16 17:24:45 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,11 +121,6 @@ void Config::parseServers()
 		this->servers.push_back(newServ);
 		std::cout << "Added server with port " << newServ.getPort() << std::endl;
 	}
-	// for (size_t i = 0; i < this->servers.size(); i++)
-	// {
-	// 	for (size_t j = i + 1; j < this->servers.size(); i++)
-	// 	{}
-	// }
 
 	std::cout << "Total server configured: " << this->servers.size() << std::endl;
 }
@@ -139,7 +134,7 @@ void Config::parseServerBlock(const std::string &serverBlock, Server &server)
 	{
 		std::string line = lines[i];
 		
-		if (line.empty() || line.find("server") != std::string::npos)
+		if (line.empty() || line.find("server {") != std::string::npos)
 		{
 			i++;
 			continue;

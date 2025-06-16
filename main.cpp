@@ -32,6 +32,16 @@ int main(int argc, char **argv) {
         std::vector<pollfd> poll_fds;
         // Mapa para relacionar file descriptors con servidores
         std::map<int, Server*> server_map;
+
+        Server *server = config.getServer(0);
+        std::vector<Location> locations = server->getLocations();
+        std::cout << "ALL LOCATIONS" << std::endl;
+        for (size_t i = 0; i < locations.size(); i++)
+        {
+            std::cout << locations[i].getRoot() << std::endl; 
+        }
+
+
         
         // Inicializar todos los servidores
         for (size_t i = 0; i < config.getServerNum(); ++i) {

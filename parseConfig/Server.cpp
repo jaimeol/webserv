@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/15 17:52:08 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/16 17:50:30 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -537,14 +537,14 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 			std::string auxRoot = returnParams(src[i], 4);
 			validEOL(auxRoot);
 			removeSemicolon(auxRoot);
+			std::cout << "AUX ROOT: " << auxRoot << std::endl;
+			
 			if (name == "/cgi-bin")
-			{
 				location.setRoot(".");
-			}
 			else if (auxRoot == "." || auxRoot == "./")
-				location.setRoot(".");
+				location.setRoot(auxRoot);
 			else if (getPathType(auxRoot) == 2)
-				location.setRoot(getCurrentWorkingDir());
+				location.setRoot(auxRoot);
 			else if (auxRoot[0] == '/')
 				location.setRoot(auxRoot);
 			else
@@ -642,7 +642,6 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 		location.setClientBodySize(this->client_max_body_size);
 	tryLocation(location);
 	this->_locations.push_back(location);
-	
 }
 
 const std::string &Server::getName()
