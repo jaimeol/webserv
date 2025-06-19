@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServ.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 14:22:53 by jolivare          #+#    #+#             */
-/*   Updated: 2025/04/11 16:25:02 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/19 12:10:24 by rpisoner         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,6 @@
 # include <iterator>
 # include <list>
 # include <utility>
-
 
 // C Includes
 # include <unistd.h>

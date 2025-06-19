@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/07 11:46:37 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/16 17:24:45 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/19 14:42:29 by rpisoner         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -303,6 +303,11 @@ std::pair<std::string, std::string> Config::parseLocationBlock(const std::string
 	std::string content = block.substr(openBrace + 1, closeBrace - openBrace - 1);
 
 	return std::make_pair(path, content);
+}
+
+std::vector<Server> Config::getServers() const
+{
+	return this->servers;
 }
 
 Server *Config::getServer(int i)

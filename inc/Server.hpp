@@ -72,19 +72,19 @@ class Server
 		void setLocation(std::string name, std::vector<std::string> &src);
 		
 
-       const std::string &getName();
-       const uint16_t &getPort();
-       const in_addr_t &getHost();
-       const std::string &getIndex();
-       const std::string &getRoot();
-       const unsigned long &getClientMaxBodySize();
-       const bool &getAutoIndex();
-       const std::map<unsigned int, std::string> &getWebErrors();
-       const std::string &getWebErrorPath(int code);
-	   const std::vector<Location> &getLocations() const;
-       int getListenFd() const;
-       const pollfd getPollFd();
-       const std::vector<Location>::iterator &getLocationKey(std::string key);
-       
+		const in_addr_t &getHost() const;
+		const uint16_t &getPort() const;
+		const std::string &getName() const;
+		const std::string &getIndex() const;
+		const std::string &getRoot() const;
+		const unsigned long &getClientMaxBodySize() const;
+		const bool &getAutoIndex() const;
+		const std::map<unsigned int, std::string> &getWebErrors() const;
+		const std::string &getWebErrorPath(int code) const;
+		const std::vector<Location> &getLocations() const;
+		int getListenFd() const;
+		const pollfd getPollFd() const;
+		const std::vector<Location>::iterator &getLocationKey(std::string key) const;
+  
        
 };

@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+         #
+#    By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:35:06 by jolivare          #+#    #+#              #
-#    Updated: 2025/06/15 16:42:44 by jolivare         ###   ########.fr        #
+#    Updated: 2025/06/19 16:23:12 by rpisoner         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,7 @@ SRC = parseConfig/Server.cpp parseConfig/Location.cpp main.cpp parseConfig/HttpR
 OBJECTS = $(SRC:.cpp=.o)
 CC = c++
 RM = rm -f
-CPPFLAGS = -Wall -Wextra -Werror -std=c++98
+CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -g3
 
 all: $(NAME)
 

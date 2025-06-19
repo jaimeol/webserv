@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/16 17:50:30 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/19 14:12:39 by rpisoner         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -644,46 +644,46 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 	this->_locations.push_back(location);
 }
 
-const std::string &Server::getName()
+const std::string &Server::getName() const
 {
 	return this->_name;
 }
 
-const uint16_t &Server::getPort()
+const uint16_t &Server::getPort() const
 {
 	return this->_port;
 }
 
-const in_addr_t &Server::getHost()
+const in_addr_t &Server::getHost() const
 {
 	return this->_host;
 }
-const std::string &Server::getIndex()
+const std::string &Server::getIndex() const
 {
 	return this->_index;
 }
 
-const std::string &Server::getRoot()
+const std::string &Server::getRoot() const
 {
 	return this->_root;
 }
 
-const unsigned long &Server::getClientMaxBodySize()
+const unsigned long &Server::getClientMaxBodySize() const
 {
 	return this->client_max_body_size;
 }
 
-const bool &Server::getAutoIndex()
+const bool &Server::getAutoIndex() const
 {
 	return this->_autoindex;
 }
 
-const std::map<unsigned int, std::string> &Server::getWebErrors()
+const std::map<unsigned int, std::string> &Server::getWebErrors() const
 {
 	return this->_web_errors;
 }
 
-const std::string &Server::getWebErrorPath(int code)
+const std::string &Server::getWebErrorPath(int code) const
 {
 	std::map<unsigned int, std::string>::const_iterator it = this->_web_errors.find(code);
 	if (it == this->_web_errors.end())
@@ -704,7 +704,7 @@ int Server::getListenFd() const
 	return this->listen_fd;
 }
 
-const pollfd Server::getPollFd()
+const pollfd Server::getPollFd() const
 {
 	return this->_pollfd;
 }

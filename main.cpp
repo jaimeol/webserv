@@ -23,7 +23,7 @@ void signalHandler(int) {
 int main(int argc, char **argv) {
     try {
         signal(SIGINT, signalHandler);
-        
+
         // Configuración del servidor
         std::string configFile = (argc > 1) ? argv[1] : "simple_config.conf";
         Config config(configFile);
@@ -129,25 +129,13 @@ int main(int argc, char **argv) {
 
                     HttpRequest req;
                     HttpResponse res;
+
                     try {
                         req.parse(request);
-                        
-                        // Encontrar el servidor correcto basado en el host
-                        Server* targetServer = NULL;
-                        std::string host = req.headers["Host"];
-                        for (std::map<int, Server*>::iterator it = server_map.begin(); 
-                             it != server_map.end(); ++it) {
-                            if (it->second->getName() == host) {
-                                targetServer = it->second;
-                                break;
-                            }
-                        }
-                        
-                        if (!targetServer) {
-                            targetServer = server_map.begin()->second; // Servidor por defecto
-                        }
-                        
-                        res = HttpHandler::handleRequest(req, *targetServer);
+
+                        //std::cout << request << std::endl;
+                        //Encontrar el servidor correcto basado en el host                        
+                        res = HttpHandler::handleRequest(req, config.getServers());
                     } catch (const std::exception& e) {
                         res.status_code = 400;
                         res.status_text = "Bad Request";
