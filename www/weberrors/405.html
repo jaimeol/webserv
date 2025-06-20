@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>405 Method Not Allowed</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #444;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .message {
+      position: absolute;
+      top: 100px;
+      width: 100%;
+      text-align: center;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .message-box-inner {
+      display: inline-block;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .message h1 {
+      font-size: 72px;
+      color: #d33;
+      margin: 0;
+    }
+
+    .message p {
+      font-size: 24px;
+      margin: 0;
+    }
+
+    .cat-gif {
+      position: absolute;
+      width: 120px;
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      animation: rotate 8s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="message">
+    <div class="message-box-inner" id="message-box">
+      <h1>405</h1>
+      <p>Method not allowed</p>
+    </div>
+  </div>
+
+  <script>
+    const MAX_CATS = 10;
+    const gifSrc = "../../cat-eat.gif"; // Ruta local a tu GIF
+    const cats = [];
+
+    function rectsOverlap(r1, r2) {
+      return !(
+        r1.right < r2.left ||
+        r1.left > r2.right ||
+        r1.bottom < r2.top ||
+        r1.top > r2.bottom
+      );
+    }
+
+    class BouncingCat {
+      constructor(x, y) {
+        this.el = document.createElement("img");
+        this.el.src = gifSrc;
+        this.el.className = "cat-gif";
+
+        this.x = x;
+        this.y = y;
+        this.dx = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+        this.dy = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+
+        this.el.style.left = `${this.x}px`;
+        this.el.style.top = `${this.y}px`;
+
+        document.body.appendChild(this.el);
+      }
+
+      getRect() {
+        return this.el.getBoundingClientRect();
+      }
+
+      update() {
+        const w = this.el.offsetWidth;
+        const h = this.el.offsetHeight;
+        const screenW = window.innerWidth;
+        const screenH = window.innerHeight;
+
+        const maxSpeed = 15;
+        this.dx = Math.max(Math.min(this.dx, maxSpeed), -maxSpeed);
+        this.dy = Math.max(Math.min(this.dy, maxSpeed), -maxSpeed);
+
+        if (this.x + w >= screenW) {
+          this.x = screenW - w;
+          this.dx *= -1.1;
+        } else if (this.x <= 0) {
+          this.x = 0;
+          this.dx *= -1.1;
+        }
+
+        if (this.y + h >= screenH) {
+          this.y = screenH - h;
+          this.dy *= -1.1;
+        } else if (this.y <= 0) {
+          this.y = 0;
+          this.dy *= -1.1;
+        }
+
+        this.x += this.dx;
+        this.y += this.dy;
+
+        this.el.style.left = `${this.x}px`;
+        this.el.style.top = `${this.y}px`;
+      }
+
+      checkCollisionWith(other) {
+        const r1 = this.getRect();
+        const r2 = other.getRect();
+
+        if (rectsOverlap(r1, r2)) {
+          const tempDx = this.dx;
+          const tempDy = this.dy;
+          this.dx = other.dx * 1.1;
+          this.dy = other.dy * 1.1;
+          other.dx = tempDx * 1.1;
+          other.dy = tempDy * 1.1;
+        }
+      }
+
+      checkCollisionWithMessage(messageRect) {
+        const r1 = this.getRect();
+
+        if (rectsOverlap(r1, messageRect)) {
+          this.dx *= -1.1;
+          this.dy *= -1.1;
+          this.x += this.dx;
+          this.y += this.dy;
+        }
+      }
+    }
+
+    function updateAllCats() {
+      const messageRect = document.getElementById("message-box").getBoundingClientRect();
+
+      for (let i = 0; i < cats.length; i++) {
+        cats[i].update();
+        cats[i].checkCollisionWithMessage(messageRect);
+
+        for (let j = i + 1; j < cats.length; j++) {
+          cats[i].checkCollisionWith(cats[j]);
+        }
+      }
+
+      requestAnimationFrame(updateAllCats);
+    }
+
+    function createCat() {
+      const messageRect = document.getElementById("message-box").getBoundingClientRect();
+      const catSize = 120;
+      let attempts = 0;
+      let x, y;
+
+      do {
+        x = Math.random() * (window.innerWidth - catSize);
+        y = Math.random() * (window.innerHeight - catSize);
+
+        const tempRect = {
+          left: x,
+          top: y,
+          right: x + catSize,
+          bottom: y + catSize
+        };
+
+        const overlapsMessage = rectsOverlap(tempRect, messageRect);
+        const overlapsCat = cats.some(cat => rectsOverlap(tempRect, cat.getRect()));
+        attempts++;
+
+        if (!overlapsMessage && !overlapsCat) break;
+      } while (attempts < 50);
+
+      if (attempts < 50) {
+        const cat = new BouncingCat(x, y);
+        cats.push(cat);
+      }
+    }
+
+    window.onload = () => {
+      createCat(); // Uno solo al inicio
+
+      function spawnNext() {
+        const delay = Math.random() * 4000 + 1000;
+        setTimeout(() => {
+          if (cats.length < MAX_CATS) {
+            createCat();
+            spawnNext();
+          }
+        }, delay);
+      }
+
+      spawnNext();
+      updateAllCats();
+    };
+  </script>
+
+</body>
+</html>

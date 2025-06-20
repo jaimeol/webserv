@@ -206,7 +206,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const std::vecto
 			res.version = "HTTP/1.1";
             res.status_code = 405;
             res.status_text = "Method Not Allowed";
-            res.body = "Method Not Allowed";
+			res.body = "<h1>405 - Method Not Allowed</h1>";
             res.headers["Content-Length"] = "19";
             res.headers["Content-Type"] = "text/plain";
             return res;
