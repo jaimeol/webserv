@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/01 10:47:16 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/19 14:42:15 by rpisoner         ###   ########.fr       */
+/*   Updated: 2025/06/20 16:03:19 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,4 +43,5 @@ class Config
 		std::vector<Server> getServers() const;
 		
 		void printConfig();
+		void validateConfig();
 };

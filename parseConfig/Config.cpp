@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/07 11:46:37 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/19 14:42:29 by rpisoner         ###   ########.fr       */
+/*   Updated: 2025/06/20 16:17:00 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -342,4 +342,21 @@ void Config::printConfig()
 		std::cout << std::endl;
 	}
 	std::cout << "=======================" << std::endl;
+}
+
+void Config::validateConfig()
+{
+	for (size_t i = 0; i < this->servers.size(); i++)
+	{
+		if (this->servers[i].getHost() == 0)
+		{
+			std::cout << "WARNING: Host has not been defined, host will be set to default value of 127.0.0.1" << std::endl;
+			this->servers[i].setHost("127.0.0.1");
+		}
+		if (this->servers[i].getClientMaxBodySize() == 0)
+		{
+			std::cout << "WARNING: client max body size has not been defined, client max body size will be set to default value of 1000" << std::endl;
+			this->servers[i].setClientMaxBodySize("1000");
+		}
+	}
 }
