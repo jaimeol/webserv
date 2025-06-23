@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/19 14:12:39 by rpisoner         ###   ########.fr       */
+/*   Updated: 2025/06/23 14:46:01 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -538,17 +538,7 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 			validEOL(auxRoot);
 			removeSemicolon(auxRoot);
 			std::cout << "AUX ROOT: " << auxRoot << std::endl;
-			
-			if (name == "/cgi-bin")
-				location.setRoot(".");
-			else if (auxRoot == "." || auxRoot == "./")
-				location.setRoot(auxRoot);
-			else if (getPathType(auxRoot) == 2)
-				location.setRoot(auxRoot);
-			else if (auxRoot[0] == '/')
-				location.setRoot(auxRoot);
-			else
-				location.setRoot(auxRoot);
+			location.setRoot(auxRoot);
 		}
 		else if (src[i].substr(0, 13) == "allow_methods" && paramsLeft(src[i], 13))
 		{
@@ -636,10 +626,14 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 			maxBodySize = true;
 		}
 		else
-			throw std::runtime_error("Illegan parameter in location: " + src[i]);
+			throw std::runtime_error("Illegal parameter in location: " + src[i]);
 	}
 	if (!maxBodySize)
 		location.setClientBodySize(this->client_max_body_size);
+	if (location.getPath() == "/cgi-bin" && location.getRoot().empty())
+		location.setRoot(".");
+	else if (location.getRoot().empty())
+		location.setRoot(this->getRoot());
 	tryLocation(location);
 	this->_locations.push_back(location);
 }
