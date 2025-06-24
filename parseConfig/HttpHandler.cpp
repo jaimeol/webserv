@@ -13,6 +13,49 @@ static bool isFile(const std::string& path) {
 
 //HttpHandler::HttpHandler(const std::vector<Server>& servers) : _servers(servers) {}
 
+std::string HttpHandler::matchCookie(const HttpRequest& req, HttpResponse& res) {
+    std::string sessionId;
+    std::map<std::string, std::string>::const_iterator it = req.headers.find("Cookie");
+
+    if (it != req.headers.end()) {
+        std::string cookies = it->second;
+        std::size_t pos = cookies.find("sessionId=");
+        if (pos != std::string::npos) {
+            sessionId = cookies.substr(pos + 10);
+            std::size_t end = sessionId.find(';');
+            if (end != std::string::npos)
+                sessionId = sessionId.substr(0, end);
+        }
+    }
+
+    if (sessionId.empty() || !sessionManager.hasSession(sessionId)) {
+        sessionId = sessionManager.generateSessionId();
+        sessionManager.createSession(sessionId);
+        res.headers["Set-Cookie"] = "sessionId=" + sessionId + "; Path=/; HttpOnly";
+    }
+
+    return sessionId;
+}
+
+void HttpHandler::handleVisits(std::map<std::string, std::string>& session, HttpResponse& res){
+    if (session.find("visits") == session.end()) {
+        session["visits"] = "1";
+    } else {
+        int count = std::atoi(session["visits"].c_str());
+        count++;
+        std::ostringstream oss;
+        oss << count;
+        session["visits"] = oss.str();
+    }
+
+    // Añadir cookie de visitas
+    std::string cookie = "visits=" + session["visits"] + "; Path=/";
+    if (res.headers.find("Set-Cookie") != res.headers.end())
+        res.headers["Set-Cookie"] += "; " + cookie;
+    else
+        res.headers["Set-Cookie"] = cookie;
+}
+
 const Server& HttpHandler::matchServer(const HttpRequest& req, const std::vector<Server>& servers) {
 	std::string hostname;
 	std::string portStr;
@@ -281,55 +324,65 @@ HttpResponse HttpHandler::handleDELETE(const HttpRequest& req, const Location& l
 }
 
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const std::vector<Server>& servers) {
-	HttpResponse res;
-	try {
-		Server server = matchServer(req, servers);
- 		Location loc = matchLocation(req.uri, server);
-		std::cout << "Location: " << loc.getPath() << std::endl;
-		std::vector<std::string> allowed = loc.getMethods();
-		for (size_t i = 0; i < allowed.size(); i++)
-		{
-			std::cout << "Allowed: " << allowed[i] << std::endl;
-		}
-		if (std::find(allowed.begin(), allowed.end(), req.method) == allowed.end()) {
-			res.version = "HTTP/1.1";
-			res.status_code = 405;
-			res.status_text = "Method Not Allowed";
-			std::ifstream file("./www/weberrors/405.html");
-			if (!file.is_open())
-				throw std::runtime_error("Could not open error file: 405.html");
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			res.body = buffer.str();
-			res.headers["Content-Type"] = "text/html";
-			std::ostringstream len;
-			len << res.body.length();
-			res.headers["Content-Length"] = len.str();
-			return res;
-		}
-		if (req.method == "GET")
-			return handleGET(req, loc);
-		else if (req.method == "POST")
-			return handlePOST(req, loc);
-		else if (req.method == "DELETE")
-			return handleDELETE(req, loc);
+    HttpResponse res; // usado para capturar Set-Cookie desde matchCookie
+    try {
+        Server server = matchServer(req, servers);
+        Location loc = matchLocation(req.uri, server);
+        std::vector<std::string> allowed = loc.getMethods();
 
-		res.version = "HTTP/1.1";
-		res.status_code = 501;
-		res.status_text = "Not Implemented";
-		res.body = "Not Implemented";
-		res.headers["Content-Length"] = "15";
-		res.headers["Content-Type"] = "text/plain";
-		return res;
-	} catch (const std::exception& e) {
-		res.version = "HTTP/1.1";
-		res.status_code = 404;
-		res.status_text = "Not Found";
-		res.body = "<h1>404 Not Found</h1>";
-		std::ostringstream len;
-		len << res.body.length();
-		res.headers["Content-Type"] = "text/html";
-		res.headers["Content-Length"] = len.str();
-		return res;
-	}
+		std::cout << "PATH\n" << std::endl;
+		std::cout << loc.getPath() << std::endl;
+        if (std::find(allowed.begin(), allowed.end(), req.method) == allowed.end()) {
+            res.version = "HTTP/1.1";
+            res.status_code = 405;
+            res.status_text = "Method Not Allowed";
+            res.body = "<h1>405 - Method Not Allowed</h1>";
+            res.headers["Content-Type"] = "text/plain";
+            std::ostringstream len;
+            len << res.body.length();
+            res.headers["Content-Length"] = len.str();
+            return res;
+        }
+
+        // --- Manejo de cookies y sesión
+        std::string sessionId = matchCookie(req, res);
+        std::map<std::string, std::string>& session = sessionManager.getSession(sessionId);
+        handleVisits(session, res);
+
+        // --- Construir respuesta en una nueva variable
+        HttpResponse response;
+        if (req.method == "GET")
+            response = handleGET(req, loc);
+        else if (req.method == "POST")
+            response = handlePOST(req, loc);
+        else if (req.method == "DELETE")
+            response = handleDELETE(req, loc);
+        else {
+            response.version = "HTTP/1.1";
+            response.status_code = 501;
+            response.status_text = "Not Implemented";
+            response.body = "Not Implemented";
+            std::ostringstream len;
+            len << response.body.length();
+            response.headers["Content-Type"] = "text/plain";
+            response.headers["Content-Length"] = len.str();
+        }
+
+        // --- Preservar Set-Cookie si fue seteada
+        if (res.headers.find("Set-Cookie") != res.headers.end()) {
+            response.headers["Set-Cookie"] = res.headers["Set-Cookie"];
+        }
+
+        return response;
+    } catch (const std::exception& e) {
+        res.version = "HTTP/1.1";
+        res.status_code = 404;
+        res.status_text = "Not Found";
+        res.body = "<h1>404 Not Found</h1>";
+        std::ostringstream len;
+        len << res.body.length();
+        res.headers["Content-Type"] = "text/html";
+        res.headers["Content-Length"] = len.str();
+        return res;
+    }
 }
