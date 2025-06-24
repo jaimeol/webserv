@@ -13,6 +13,16 @@ static bool isFile(const std::string& path) {
 	return stat(path.c_str(), &s) == 0 && S_ISREG(s.st_mode);
 }
 
+static bool endsWith(const std::string& str, const std::string& suffix) {
+    return str.size() >= suffix.size() &&
+           str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+static bool isCGIScript(const std::string& path) {
+    return path.find("/cgi-bin/") != std::string::npos ||
+           endsWith(path, ".py") || endsWith(path, ".php") || endsWith(path, ".cgi");
+}
+
 std::string HttpHandler::matchCookie(const HttpRequest& req, HttpResponse& res) {
     std::string sessionId;
     std::map<std::string, std::string>::const_iterator it = req.headers.find("Cookie");
@@ -147,7 +157,58 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 	std::cout << "Location index: " << loc.getIndex() << std::endl;
 	std::string fullPath;
 	if (loc.getPath() == "/cgi-bin")
+{
 		fullPath = "." + req.uri;
+		if (isCGIScript(fullPath)) {
+			int pipefd[2];
+			if (pipe(pipefd) == -1)
+				throw std::runtime_error("pipe() failed");
+
+			pid_t pid = fork();
+			if (pid < 0)
+				throw std::runtime_error("fork() failed");
+
+			if (pid == 0) {
+				// Hijo: ejecuta CGI
+				dup2(pipefd[1], STDOUT_FILENO);
+				close(pipefd[0]); // cerrar lectura
+
+				// Preparar argumentos para execve
+				char* argv[] = { const_cast<char*>(fullPath.c_str()), NULL };
+
+				// Variables de entorno CGI mínimas
+				char* envp[] = {
+					const_cast<char*>("REQUEST_METHOD=GET"),
+					NULL
+				};
+
+				execve(fullPath.c_str(), argv, envp);
+				exit(1); // execve falló
+			} else {
+				// Padre: leer output del CGI
+				close(pipefd[1]); // cerrar escritura
+				char buffer[1024];
+				std::string cgi_output;
+
+				ssize_t n;
+				while ((n = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
+					cgi_output.append(buffer, n);
+				}
+				close(pipefd[0]);
+
+				res.status_code = 200;
+				res.status_text = "OK";
+				res.body = cgi_output;
+
+				std::ostringstream len;
+				len << res.body.length();
+				res.headers["Content-Type"] = "text/html";
+				res.headers["Content-Length"] = len.str();
+				return res;
+			}
+		}
+
+	}
 	else
 		fullPath = loc.getRoot() + req.uri;
 	std::cout << "FULL PATH: " << fullPath << std::endl;
