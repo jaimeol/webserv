@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
+/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/23 14:46:01 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/24 18:32:06 by rpisoner         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -617,7 +617,10 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 			for (size_t i = 0; i < auxSize.length(); i++)
 			{
 				if (!isdigit(auxSize[i]))
-					throw std::runtime_error("Illegal character in client max body size: " + auxSize[i]);
+				{
+					std::string character(1, auxSize[i]);
+					throw std::runtime_error("Illegal character in client max body size: " + character);
+				}
 			}
 			long size = atol(auxSize.c_str());
 			if (size < 1)

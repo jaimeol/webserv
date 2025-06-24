@@ -151,7 +151,7 @@ const Server& HttpHandler::matchServer(const HttpRequest& req, const std::vector
 			return servers[i];
 		}
 	}
-	throw std::runtime_error("No matching server for host: " + host);
+	throw std::runtime_error("No matching server for host: " + hostname);
 }
 
 Location HttpHandler::matchLocation(const std::string& uri, const Server& server) {

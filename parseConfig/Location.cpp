@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jolivare <jolivare@student.42.fr>          +#+  +:+       +#+        */
+/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 17:15:59 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/15 17:18:15 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/24 18:32:43 by rpisoner         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,7 +124,10 @@ void Location::setClientBodySize(std::string const &bodySize)
 	for (size_t i = 0; i < bodySize.length(); i++)
 	{
 		if (!isdigit(bodySize[i]))
-			throw std::runtime_error("Wrong argument in client body size: " + bodySize[i]);
+		{
+			std::string character(1, bodySize[i]);
+			throw std::runtime_error("Wrong argument in client body size: " + character);
+		}
 	}
 	this->client_max_body_size = atol(bodySize.c_str());
 	if (!client_max_body_size)
