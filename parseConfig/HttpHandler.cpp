@@ -49,9 +49,13 @@ static std::string generateAutoIndexHtml(const std::string &dirPath, const std::
 	html += "</ul></body></html>";
 	return html;
 }
-static bool isCGIScript(const std::string& path) {
-    return path.find("/cgi-bin/") != std::string::npos ||
-           endsWith(path, ".py") || endsWith(path, ".php") || endsWith(path, ".cgi");
+static bool isCGIScript(const std::string& path, const std::vector<std::string>& extensions) {
+	for (std::vector<std::string>::const_iterator it = extensions.begin(); it != extensions.end(); ++it)
+	{
+		if (endsWith(path, *it))
+			return true;
+	}
+	return false;
 }
 
 std::string HttpHandler::matchCookie(const HttpRequest& req, HttpResponse& res) {
@@ -141,10 +145,6 @@ const Server& HttpHandler::matchServer(const HttpRequest& req, const std::vector
 
 	uint16_t port = static_cast<uint16_t>(portInt);
 
-	//std::cout << "--SEEKING--" << std::endl;
-	//std::cout << "Host: " << host << " Port: " << port << std::endl;
-	//std::cout << "Host:" << inet_ntoa(addr) << " Port: " << port << std::endl;
-
 	for (size_t i = 0; i < servers.size(); ++i) {
 		//std::cout << "Servers[" << i << "] -> Host: " << servers[i].getHost() << " Port: " << servers[i].getPort() << std::endl;
 		if (servers[i].getPort() == port && servers[i].getHost() == host) {
@@ -190,13 +190,13 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 	if (loc.getPath() == "/cgi-bin")
 	{
 		fullPath = "." + req.uri;
-		if (isFile(fullPath) && isCGIScript(fullPath)) {
+		if (isFile(fullPath) && isCGIScript(fullPath, loc.getCgiExtension())) {
 			int pipefd[2];
 			if (pipe(pipefd) == -1)
 				throw std::runtime_error("pipe() failed");
 
 			pid_t pid = fork();
-			if (pid < 0)
+			if (pid < 0)	
 				throw std::runtime_error("fork() failed");
 
 			if (pid == 0) {

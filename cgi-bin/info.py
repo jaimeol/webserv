@@ -7,7 +7,6 @@ print("Content-type: text/html\n")
 
 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-# Empieza el HTML
 print("""
 <!DOCTYPE html>
 <html lang="es">
