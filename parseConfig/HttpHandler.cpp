@@ -157,7 +157,7 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 	std::cout << "Location index: " << loc.getIndex() << std::endl;
 	std::string fullPath;
 	if (loc.getPath() == "/cgi-bin")
-{
+	{
 		fullPath = "." + req.uri;
 		if (isCGIScript(fullPath)) {
 			int pipefd[2];
@@ -392,14 +392,19 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const std::vecto
 		std::cout << loc.getPath() << std::endl;
         if (std::find(allowed.begin(), allowed.end(), req.method) == allowed.end()) {
             res.version = "HTTP/1.1";
-            res.status_code = 405;
-            res.status_text = "Method Not Allowed";
-            res.body = "<h1>405 - Method Not Allowed</h1>";
-            res.headers["Content-Type"] = "text/plain";
-            std::ostringstream len;
-            len << res.body.length();
-            res.headers["Content-Length"] = len.str();
-            return res;
+			res.status_code = 405;
+			res.status_text = "Method Not Allowed";
+			std::ifstream file("./www/weberrors/405.html");
+			if (!file.is_open())
+				throw std::runtime_error("Could not open error file: 405.html");
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			res.body = buffer.str();
+			res.headers["Content-Type"] = "text/html";
+			std::ostringstream len;
+			len << res.body.length();
+			res.headers["Content-Length"] = len.str();
+			return res;
         }
 
         // --- Manejo de cookies y sesión
