@@ -13,6 +13,12 @@ static bool isFile(const std::string& path) {
 	return stat(path.c_str(), &s) == 0 && S_ISREG(s.st_mode);
 }
 
+static bool isFileReadable(const std::string& path)
+{
+	struct stat s;
+	return stat(path.c_str(), &s) == 0 && S_ISREG(s.st_mode) && access(path.c_str(), R_OK) == 0;
+}
+
 static bool isDirectory(const std::string& path)
 {
 	struct stat s;
@@ -226,10 +232,29 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 					cgi_output.append(buffer, n);
 				}
 				close(pipefd[0]);
-
-				res.status_code = 200;
-				res.status_text = "OK";
-				res.body = cgi_output;
+				
+				int status = 0;
+				waitpid(pid, &status, 0);
+				if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+				{
+					res.status_code = 500;
+					res.status_text = "Internal Server Error";
+					try
+					{
+						res.body = readFileContent("www/weberrors/500.html");
+					}
+					catch(...)
+					{
+						res.body = "<h1>500 Internal Server Error </h1>";
+					}
+					
+				}
+				else
+				{
+					res.status_code = 200;
+					res.status_text = "OK";
+					res.body = cgi_output;
+				}
 
 				std::ostringstream len;
 				len << res.body.length();
@@ -244,9 +269,24 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 		fullPath = loc.getRoot() + req.uri;
 	std::cout << "FULL PATH: " << fullPath << std::endl;
 	if (isFile(fullPath)) {
-		res.status_code = 200;
-		res.status_text = "OK";
-		res.body = readFileContent(fullPath);
+		if (!isFileReadable(fullPath)){
+			res.status_code = 403;
+			res.status_text = "Forbidden";
+			try
+			{
+				res.body = readFileContent("www/weberrors/403.html");
+			}
+			catch(...)
+			{
+				res.body = "<h1>403 Forbidden</h1>";
+			}
+		}
+		else
+		{
+			res.status_code = 200;
+			res.status_text = "OK";
+			res.body = readFileContent(fullPath);
+		}
 	} else {
 		std::string indexPath = fullPath + "/" + loc.getIndex();
 		if (isFile(indexPath)) {
