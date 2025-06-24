@@ -6,12 +6,12 @@
 #include <unistd.h>
 #include <cstdio>
 
+SessionManager HttpHandler::sessionManager;
+
 static bool isFile(const std::string& path) {
 	struct stat s;
 	return stat(path.c_str(), &s) == 0 && S_ISREG(s.st_mode);
 }
-
-//HttpHandler::HttpHandler(const std::vector<Server>& servers) : _servers(servers) {}
 
 std::string HttpHandler::matchCookie(const HttpRequest& req, HttpResponse& res) {
     std::string sessionId;
@@ -79,9 +79,6 @@ const Server& HttpHandler::matchServer(const HttpRequest& req, const std::vector
 	if (hostname == "localhost")
 		hostname = "127.0.0.1";
 		
-	std::cout << "FURULA" << std::endl;
-
-
 	in_addr_t host = inet_addr(hostname.c_str());
 	if (host == INADDR_NONE) {
 		throw std::runtime_error("Host inválido: " + hostname);
@@ -103,12 +100,12 @@ const Server& HttpHandler::matchServer(const HttpRequest& req, const std::vector
 
 	uint16_t port = static_cast<uint16_t>(portInt);
 
-	std::cout << "--SEEKING--" << std::endl;
-	std::cout << "Host: " << host << " Port: " << port << std::endl;
+	//std::cout << "--SEEKING--" << std::endl;
+	//std::cout << "Host: " << host << " Port: " << port << std::endl;
 	//std::cout << "Host:" << inet_ntoa(addr) << " Port: " << port << std::endl;
 
 	for (size_t i = 0; i < servers.size(); ++i) {
-		std::cout << "Servers[" << i << "] -> Host: " << servers[i].getHost() << " Port: " << servers[i].getPort() << std::endl;
+		//std::cout << "Servers[" << i << "] -> Host: " << servers[i].getHost() << " Port: " << servers[i].getPort() << std::endl;
 		if (servers[i].getPort() == port && servers[i].getHost() == host) {
 			return servers[i];
 		}
