@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpHandler.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpisoner <rpisoner@student.42madrid.com>   +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/29 17:49:17 by rpisoner          #+#    #+#             */
-/*   Updated: 2025/06/24 13:18:56 by rpisoner         ###   ########.fr       */
+/*   Updated: 2025/06/24 16:52:10 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include "SessionManager.hpp"
 #include "Server.hpp"
 #include "Location.hpp"
+#include "WebServ.hpp"
 
 class HttpHandler {
 	public:

@@ -13,11 +13,42 @@ static bool isFile(const std::string& path) {
 	return stat(path.c_str(), &s) == 0 && S_ISREG(s.st_mode);
 }
 
+static bool isDirectory(const std::string& path)
+{
+	struct stat s;
+	return stat(path.c_str(), &s) == 0 && S_ISDIR(s.st_mode);
+}
 static bool endsWith(const std::string& str, const std::string& suffix) {
     return str.size() >= suffix.size() &&
            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+static std::string generateAutoIndexHtml(const std::string &dirPath, const std::string& uri)
+{
+	DIR* dir = opendir(dirPath.c_str());
+	if (!dir)
+		return "<h1>403 Forbidden </h1>";
+	std::string html = "<html><head><title>Index of " + uri + "</title></head><body>";
+	html += "<h1>Index of " + uri + "</h1><ul>";
+
+	struct dirent* entry;
+	while((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+		if (name == ".") continue;
+
+		std::string link = uri;
+		char last_char = link[link.size() - 1];
+		if (link.empty() || last_char != '/')
+			link += "/";
+		link += name;
+
+		html += "<li><a href=\"" + link + "\">" + name + "</a></li>";
+	}
+	closedir(dir);
+	html += "</ul></body></html>";
+	return html;
+}
 static bool isCGIScript(const std::string& path) {
     return path.find("/cgi-bin/") != std::string::npos ||
            endsWith(path, ".py") || endsWith(path, ".php") || endsWith(path, ".cgi");
@@ -159,7 +190,7 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 	if (loc.getPath() == "/cgi-bin")
 	{
 		fullPath = "." + req.uri;
-		if (isCGIScript(fullPath)) {
+		if (isFile(fullPath) && isCGIScript(fullPath)) {
 			int pipefd[2];
 			if (pipe(pipefd) == -1)
 				throw std::runtime_error("pipe() failed");
@@ -222,7 +253,14 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 			res.status_code = 200;
 			res.status_text = "OK";
 			res.body = readFileContent(indexPath);
-		} else {
+		} else if (isDirectory(fullPath) && loc.getAutoIndex())
+		{
+			res.status_code = 200;
+			res.status_text = "OK";
+			res.body = generateAutoIndexHtml(fullPath, req.uri);
+		}
+		else
+		{
 			res.status_code = 404;
 			res.status_text = "Not Found";
 			try {
