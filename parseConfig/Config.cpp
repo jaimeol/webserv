@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/07 11:46:37 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/25 11:47:19 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/25 12:42:17 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,16 +16,11 @@ Config::Config(std::string const &configPath): server_num(0)
 {
 	std::cout << "Reading config file: " << configPath << std::endl;
 	std::string content = readConfigFile(configPath);
-
-	std::cout << "Removing comments..." << std::endl;
 	removeComments(content);
-	
-	std::cout << "Extracting server blocks..." << std::endl;
 	extractServerConfigs(content);
 
 	if (this->server_configs.empty())
 		throw std::runtime_error("No server config found in file");
-	std::cout << "Parsing servers" << std::endl;
 	parseServers();
 	printConfig();
 	validateConfig();
@@ -103,14 +98,11 @@ void Config::parseServers()
 	for (size_t i = 0; i < this->server_configs.size(); i++)
 	{
 		Server newServ;
-		std::cout << "Parsing server block" << std::endl;
 		parseServerBlock(this->server_configs[i], newServ);
-		std::cout << "Server block parsed" << std::endl;
 
 		bool found_root = false;
 		for (std::vector<Location>::const_iterator it = newServ.getLocations().begin(); it < newServ.getLocations().end(); ++it)
 		{
-			std::cout << "Found location: " << it->getPath() << std::endl;
 			if (it -> getPath() == "/")
 			{
 				found_root = true;
@@ -169,7 +161,6 @@ void Config::parseServerBlock(const std::string &serverBlock, Server &server)
 			}
 			if (braceCount != 0)
 				throw std::runtime_error("Incorrect syntax in block location: " + line);
-			std::cout << "Parsing location block" << std::endl;
 			std::pair<std::string, std::string> locationInfo = parseLocationBlock(locationBlock);
 			std::string path = locationInfo.first;
 			std::string content = locationInfo.second;
@@ -191,9 +182,7 @@ void Config::parseServerBlock(const std::string &serverBlock, Server &server)
 				if (!locationDirectives[k].empty())
 					filteredDirectives.push_back(locationDirectives[k]);
 			}
-			std::cout << "Setting location" << std::endl;
 			server.setLocation(path, filteredDirectives);
-			std::cout << "Configured location " << path << " with " << filteredDirectives.size() << " directives" << std::endl;
 			i = j;
 		}
 		else
@@ -250,7 +239,6 @@ void Config::parseServerBlock(const std::string &serverBlock, Server &server)
 		server.setPort("80");
 
 	server.setWebErrors();
-	std::cout << "Server configured: " << server.getName() << "; " << server.getPort() << std::endl;
 }
 
 std::vector<std::string> Config::splitByLines(const std::string &content)
@@ -347,6 +335,18 @@ void Config::printConfig()
 
 void Config::validateConfig()
 {
+	for (std::vector<Server>::const_iterator it = servers.begin(); it != servers.end(); ++it)
+	{
+		for (std::vector<Server>::const_iterator it2 = it + 1; it2 != servers.end(); ++it2)
+		{
+			if (it->getPort() == it2->getPort())
+			{
+				std::ostringstream oss;
+				oss << "Duplicate port found: " << it->getPort();
+				throw std::runtime_error(oss.str());
+			}
+		}
+	}
 	for (size_t i = 0; i < this->servers.size(); i++)
 	{
 		if (this->servers[i].getHost() == 0)

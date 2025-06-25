@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rpisoner <rpisoner@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 16:51:34 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/24 18:32:06 by rpisoner         ###   ########.fr       */
+/*   Updated: 2025/06/25 12:25:06 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -537,7 +537,6 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 			std::string auxRoot = returnParams(src[i], 4);
 			validEOL(auxRoot);
 			removeSemicolon(auxRoot);
-			std::cout << "AUX ROOT: " << auxRoot << std::endl;
 			location.setRoot(auxRoot);
 		}
 		else if (src[i].substr(0, 13) == "allow_methods" && paramsLeft(src[i], 13))
@@ -556,7 +555,6 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 			std::string auxAutoI = returnParams(src[i], 9);
 			validEOL(auxAutoI);
 			removeSemicolon(auxAutoI);
-			std::cout << "AutoI: " << auxAutoI << std::endl;
 			location.setAutoIndex(auxAutoI);
 		}
 		else if (src[i].substr(0, 5) == "index" && paramsLeft(src[i], 5))
@@ -565,7 +563,6 @@ void Server::setLocation(std::string name, std::vector<std::string> &src)
 			validEOL(auxIndex);
 			removeSemicolon(auxIndex);
 			location.setIndex(auxIndex);
-			std::cout << "index: " << location.getIndex() << std::endl;
 		}
 		else if (src[i].substr(0, 6) == "return" && paramsLeft(src[i], 6))
 		{

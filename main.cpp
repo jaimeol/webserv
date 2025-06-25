@@ -36,17 +36,6 @@ int main(int argc, char **argv) {
 
 		std::map<int, std::string> request_buffers;
 		std::map<int, bool> request_ready;
-
-        Server *server = config.getServer(0);
-        std::vector<Location> locations = server->getLocations();
-        std::cout << "ALL LOCATIONS" << std::endl;
-        for (size_t i = 0; i < locations.size(); i++)
-        {
-            std::cout << locations[i].getRoot() << std::endl; 
-        }
-
-
-        
         // Inicializar todos los servidores
         for (size_t i = 0; i < config.getServerNum(); ++i) {
             Server* server = config.getServer(i);

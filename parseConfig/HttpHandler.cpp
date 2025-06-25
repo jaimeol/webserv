@@ -139,7 +139,6 @@ const Server& HttpHandler::matchServer(const HttpRequest& req, const std::vector
 	struct in_addr addr;
 	addr.s_addr = host;
 
-	std::cout << inet_ntoa(addr) << std::endl;
 
 	std::istringstream portStream(portStr);
 	int portInt = 80;
@@ -189,9 +188,6 @@ std::string HttpHandler::readFileContent(const std::string& path) {
 HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc) {
 	HttpResponse res;
 	res.version = "HTTP/1.1";
-	std::cout << "Location root " << loc.getRoot() << std::endl;
-	std::cout << "Location path " << loc.getPath() << std::endl;
-	std::cout << "Location index: " << loc.getIndex() << std::endl;
 	std::string fullPath;
 	if (loc.getPath() == "/cgi-bin")
 	{
@@ -267,7 +263,6 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 	}
 	else
 		fullPath = loc.getRoot() + req.uri;
-	std::cout << "FULL PATH: " << fullPath << std::endl;
 	if (isFile(fullPath)) {
 		if (!isFileReadable(fullPath)){
 			res.status_code = 403;
@@ -487,7 +482,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const std::vecto
 				res.status_code = 413;
 				res.status_text = "Payload Too Large";
 				try {
-					res.body = HttpHandler::readFileContent("www/weberrors/413.html");
+					res.body = readFileContent("www/weberrors/413.html");
 				} catch (...) {
 					res.body = "<h1>413 Payload Too Large</h1>";
 				}
@@ -499,9 +494,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const std::vecto
 			}
 		}
 
-
-		std::cout << "PATH\n" << std::endl;
-		std::cout << loc.getPath() << std::endl;
         if (std::find(allowed.begin(), allowed.end(), req.method) == allowed.end()) {
             res.version = "HTTP/1.1";
 			res.status_code = 405;
