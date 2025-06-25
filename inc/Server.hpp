@@ -33,7 +33,6 @@ class Server
         pollfd _pollfd;
         
         // Métodos privados auxiliares
-        void validateCgiPathsAndExtensions(Location &location);
         void tryCgiLocation(Location &location);
         void tryStandardLocation(Location &location);
         std::string getCurrentWorkingDir();

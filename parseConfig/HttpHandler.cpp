@@ -367,6 +367,16 @@ HttpResponse HttpHandler::handlePOST(const HttpRequest& req, const Location& loc
 		return res;
 	}
 	std::string contentType = it->second;
+	if (contentType == "text/plain") {
+		res.status_code = 200;
+		res.status_text = "OK";
+		res.body = "Texto recibido correctamente:\n" + req.body;
+		std::ostringstream len;
+		len << res.body.length();
+		res.headers["Content-Type"] = "text/plain";
+		res.headers["Content-Length"] = len.str();
+		return res;
+	}
 	size_t pos = contentType.find("boundary=");
 	if (pos == std::string::npos)
 	{
@@ -465,6 +475,30 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const std::vecto
         Server server = matchServer(req, servers);
         Location loc = matchLocation(req.uri, server);
         std::vector<std::string> allowed = loc.getMethods();
+
+		std::map<std::string, std::string>::const_iterator it = req.headers.find("Content-Length");
+		if (it != req.headers.end()) {
+			std::istringstream iss(it->second);
+			unsigned long bodySize = 0;
+			iss >> bodySize;
+
+			if (bodySize > server.getClientMaxBodySize()) {
+				res.version = "HTTP/1.1";
+				res.status_code = 413;
+				res.status_text = "Payload Too Large";
+				try {
+					res.body = HttpHandler::readFileContent("www/weberrors/413.html");
+				} catch (...) {
+					res.body = "<h1>413 Payload Too Large</h1>";
+				}
+				std::ostringstream len;
+				len << res.body.length();
+				res.headers["Content-Type"] = "text/html";
+				res.headers["Content-Length"] = len.str();
+				return res;
+			}
+		}
+
 
 		std::cout << "PATH\n" << std::endl;
 		std::cout << loc.getPath() << std::endl;

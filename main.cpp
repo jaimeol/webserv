@@ -152,33 +152,33 @@ int main(int argc, char **argv) {
 						continue; // Esperar más datos
 					}
 
-					// Llegó la petición completa: procesar
+				// Llegó la petición completa: procesar
 				HttpRequest req;
 				HttpResponse res;
 
-			try {
-				req.parse(request);
-				res = HttpHandler::handleRequest(req, config.getServers());
-			} catch (const std::exception& e) {
-				res.status_code = 400;
-				res.status_text = "Bad Request";
-				res.body = "<html><body><h1>400 Bad Request</h1></body></html>";
-			}
+				try {
+					req.parse(request);
+					res = HttpHandler::handleRequest(req, config.getServers());
+				} catch (const std::exception& e) {
+					res.status_code = 400;
+					res.status_text = "Bad Request";
+					res.body = "<html><body><h1>400 Bad Request</h1></body></html>";
+				}
 
-			std::ostringstream ss;
-			ss << res.body.length();
-			res.headers["Content-Type"] = "text/html; charset=UTF-8";
-			res.headers["Content-Length"] = ss.str();
+				std::ostringstream ss;
+				ss << res.body.length();
+				res.headers["Content-Type"] = "text/html; charset=UTF-8";
+				res.headers["Content-Length"] = ss.str();
 
-			std::string responseText = res.toString();
-			send(current_fd, responseText.c_str(), responseText.length(), 0);
+				std::string responseText = res.toString();
+				send(current_fd, responseText.c_str(), responseText.length(), 0);
 
-			// Limpiar todo
-			close(current_fd);
-			poll_fds.erase(poll_fds.begin() + i);
-			request_buffers.erase(current_fd);
-						i--;
-                } 
+				// Limpiar todo
+				close(current_fd);
+				poll_fds.erase(poll_fds.begin() + i);
+				request_buffers.erase(current_fd);
+							i--;
+					} 
             }  
         } 
 
