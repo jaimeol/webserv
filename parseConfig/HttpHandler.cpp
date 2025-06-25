@@ -306,7 +306,7 @@ HttpResponse HttpHandler::handleGET(const HttpRequest& req, const Location& loc)
 			try {
 				res.body = readFileContent("www/weberrors/404.html");
 			} catch (...) {
-				res.body = "<h1>404 Not Found</h1>";
+				res.body = "<h1>404 Not Found1</h1>";
 			}
 		}
 	}
@@ -519,7 +519,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const std::vecto
         res.version = "HTTP/1.1";
         res.status_code = 404;
         res.status_text = "Not Found";
-        res.body = "<h1>404 Not Found</h1>";
+        res.body = "<h1>404 Not Found2</h1>";
         std::ostringstream len;
         len << res.body.length();
         res.headers["Content-Type"] = "text/html";

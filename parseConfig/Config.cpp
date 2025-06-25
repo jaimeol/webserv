@@ -6,7 +6,7 @@
 /*   By: jolivare <jolivare@student.42mad.com>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/07 11:46:37 by jolivare          #+#    #+#             */
-/*   Updated: 2025/06/20 16:17:00 by jolivare         ###   ########.fr       */
+/*   Updated: 2025/06/25 11:47:19 by jolivare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ Config::Config(std::string const &configPath): server_num(0)
 	std::cout << "Parsing servers" << std::endl;
 	parseServers();
 	printConfig();
+	validateConfig();
 }
 
 Config::Config(Config const &copy)
