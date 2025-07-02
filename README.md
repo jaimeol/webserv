@@ -27,14 +27,17 @@ Made in colaboration with [rpisoner](https://github.com/rpisoner)
 ## ✅ Test
 You can test the HTTP methods by using curl or directly acceding to the website
 - POST
-
+```bash
   curl -X POST -F "file=@file_path" http://localhost:8080/uploads
+```
 - GET
-
+```bash
   curl -X http://localhost:8080/
+```
 - DELETE
-
+```bash
   curl -X DELETE http://localhost:8080/file_to_delete
+```
 
 Take into account that the methods must be allowed in the location you want to test them (you can check the allowed methods in the config file).
 ## 🛠️ Usage
