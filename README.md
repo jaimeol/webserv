@@ -1,3 +1,5 @@
+Made in colaboration with [rpisoner](https://github.com/rpisoner)
+
 # Webserv
 
 **Webserv** is a basic HTTP/1.1 web server developed in C++ as part of the 42 curriculum. The goal is to understand the fundamentals of how web servers operate by implementing one from scratch without using high-level libraries.
